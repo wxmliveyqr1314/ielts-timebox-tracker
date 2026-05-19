@@ -1,0 +1,6 @@
+{
+  "name": "IELTS TimeBox Tracker",
+  "description": "A daily timebox tracking app for IELTS preparation, designed for working professionals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
