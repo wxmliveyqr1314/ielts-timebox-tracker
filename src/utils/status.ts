@@ -1,23 +1,23 @@
 import { DailyRecord, DayStatus, TaskCheckItem, DayType } from "../types";
 
-const isMomoTask = (task: TaskCheckItem) => task.category === "momo";
+export const isMomoTask = (task: TaskCheckItem) => task.category === "momo";
 
-const isDictationTask = (task: TaskCheckItem) =>
+export const isDictationTask = (task: TaskCheckItem) =>
   task.category.startsWith("dictation");
 
-const isReadingTask = (task: TaskCheckItem) =>
+export const isReadingTask = (task: TaskCheckItem) =>
   task.category.startsWith("reading");
 
-const isSpeakingTask = (task: TaskCheckItem) =>
+export const isSpeakingTask = (task: TaskCheckItem) =>
   task.category.startsWith("speaking");
 
-const isWrapUpTask = (task: TaskCheckItem) =>
+export const isWrapUpTask = (task: TaskCheckItem) =>
   task.category === "wrap_up";
 
-const isSleepControlTask = (task: TaskCheckItem) =>
+export const isSleepControlTask = (task: TaskCheckItem) =>
   task.category === "sleep_control";
 
-const isMainTaskForDay = (task: TaskCheckItem, dayType: DayType) => {
+export const isMainTaskForDay = (task: TaskCheckItem, dayType: DayType) => {
   if (dayType === "listening_focus") return isDictationTask(task);
   if (dayType === "reading_focus") return isReadingTask(task);
   if (dayType === "speaking_focus") return isSpeakingTask(task);
