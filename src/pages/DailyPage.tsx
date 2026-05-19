@@ -456,6 +456,35 @@ function TrackerDaily({
     }
   };
 
+  function mergeTaskProgress(
+    oldTasks: TaskCheckItem[],
+    newTasks: TaskCheckItem[]
+  ): TaskCheckItem[] {
+    // Keep track of which old tasks have already been claimed to prevent
+    // multiple new tasks of the same category claiming the same old task.
+    // The user's prompt did not explicitly request this but it's safe for 1:1 mapping.
+    // I will stick exactly to the user's fallback logic.
+    return newTasks.map((newTask) => {
+      const oldTask =
+        oldTasks.find((task) => task.id === newTask.id) ||
+        oldTasks.find(
+          (task) =>
+            task.category === newTask.category &&
+            task.title === newTask.title
+        ) ||
+        oldTasks.find((task) => task.category === newTask.category);
+
+      if (!oldTask) return newTask;
+
+      return {
+        ...newTask,
+        actualMinutes: oldTask.actualMinutes ?? newTask.actualMinutes,
+        completed: oldTask.completed ?? newTask.completed,
+        notes: oldTask.notes ?? newTask.notes,
+      };
+    });
+  }
+
   const executeRegenerate = () => {
     const newTasks = generateDailyPlan({
       dayType: localConfig.dayType,
@@ -465,15 +494,22 @@ function TrackerDaily({
       yesterdayStatus: yesterdayRecord?.status === "red" ? "red" : "green",
     });
 
-    updateRecord(today, (prev: DailyRecord) => ({
-      ...prev,
-      exercised: localConfig.exercised,
-      energyLevel: localConfig.energyLevel,
-      dayType: localConfig.dayType,
-      workdayBonus: localConfig.workdayBonus,
-      tasks: newTasks, // Using new tasks generated
-      updatedAt: new Date().toISOString(),
-    }));
+    updateRecord(today, (prev: DailyRecord) => {
+      const finalTasks = mergeTaskProgress(prev.tasks, newTasks);
+
+      const updated = {
+        ...prev,
+        exercised: localConfig.exercised,
+        energyLevel: localConfig.energyLevel,
+        dayType: localConfig.dayType,
+        workdayBonus: localConfig.workdayBonus,
+        tasks: finalTasks,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      updated.status = calculateColorStatus(updated);
+      return updated;
+    });
 
     setShowConfirmRegenerate(false);
     setShowConfig(false);

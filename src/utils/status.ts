@@ -1,9 +1,40 @@
-import { DailyRecord, DayStatus } from "../types";
+import { DailyRecord, DayStatus, TaskCheckItem, DayType } from "../types";
+
+const isMomoTask = (task: TaskCheckItem) => task.category === "momo";
+
+const isDictationTask = (task: TaskCheckItem) =>
+  task.category.startsWith("dictation");
+
+const isReadingTask = (task: TaskCheckItem) =>
+  task.category.startsWith("reading");
+
+const isSpeakingTask = (task: TaskCheckItem) =>
+  task.category.startsWith("speaking");
+
+const isWrapUpTask = (task: TaskCheckItem) =>
+  task.category === "wrap_up";
+
+const isSleepControlTask = (task: TaskCheckItem) =>
+  task.category === "sleep_control";
+
+const isMainTaskForDay = (task: TaskCheckItem, dayType: DayType) => {
+  if (dayType === "listening_focus") return isDictationTask(task);
+  if (dayType === "reading_focus") return isReadingTask(task);
+  if (dayType === "speaking_focus") return isSpeakingTask(task);
+  if (dayType === "recovery") {
+    return (
+      isMomoTask(task) ||
+      isDictationTask(task) ||
+      isSpeakingTask(task)
+    );
+  }
+  return false;
+};
 
 export function calculateColorStatus(record: Partial<DailyRecord>): DayStatus {
-  const { tasks } = record;
+  const { tasks, dayType } = record;
 
-  if (!tasks || tasks.length === 0) return "pending";
+  if (!tasks || tasks.length === 0 || !dayType) return "pending";
 
   const coreTasks = tasks.filter((t) => t.isCore);
 
@@ -20,16 +51,13 @@ export function calculateColorStatus(record: Partial<DailyRecord>): DayStatus {
     ? noCompensatoryTask.completed 
     : record.noCompensatoryStayingUp;
 
-  // Metrics extraction
-  // Here we just look at the categories or assume `title` indicates what they are?
-  // We added `category` to TaskCheckItem: 'momo', 'dictation', 'reading', 'speaking', 'passive_listening', 'wrap_up', etc.
+  const wrapUpTask = tasks.find(isWrapUpTask);
+  const wrapUpCompleted = wrapUpTask ? wrapUpTask.completed : true;
 
-  const momoTasks = tasks.filter((t) => t.category === "momo");
-  const mainTasks = tasks.filter(
-    (t) =>
-      ["dictation", "reading", "speaking"].includes(t.category) && t.isCore,
-  );
-  const speakingTasks = tasks.filter((t) => t.category === "speaking");
+  // Metrics extraction
+  const momoTasks = tasks.filter(isMomoTask);
+  const mainTasks = tasks.filter((t) => isMainTaskForDay(t, dayType));
+  const speakingTasks = tasks.filter(isSpeakingTask);
 
   const momoMinutes =
     momoTasks.reduce((acc, t) => acc + t.actualMinutes, 0) +
@@ -42,12 +70,9 @@ export function calculateColorStatus(record: Partial<DailyRecord>): DayStatus {
 
   const eveningFormalMinutes = momoMinutes + mainMinutes + speakingMinutes;
 
-  // Rule: Red
-  // - Evening formal study is 0
-  // - Or compensatory staying up (noCompensatoryStayingUp === false)
-  // - Or NO core timeboxes completed.
   const anyCoreCompleted = coreTasks.some((t) => t.completed);
 
+  // Rule: Red
   if (
     !noCompensatoryStayingUp ||
     eveningFormalMinutes === 0 ||
@@ -57,20 +82,13 @@ export function calculateColorStatus(record: Partial<DailyRecord>): DayStatus {
   }
 
   // Rule: Green
-  // - All core tasks completed
-  // - stoppedAfter2230 is true
-  // - noCompensatoryStayingUp is true
   const allCoreCompleted = coreTasks.every((t) => t.completed);
-  if (allCoreCompleted && stoppedAfter2230 !== false) {
+  if (allCoreCompleted && stoppedAfter2230 !== false && noCompensatoryStayingUp && wrapUpCompleted) {
     return "green";
   }
 
   // Rule: Yellow
-  // - Momo >= 20 mins
-  // - Main Task >= 30 mins
-  // - Speaking >= 10 mins
-  // - No compensatory late sleep (noCompensatoryStayingUp === true) -- already handled by Red
-  if (momoMinutes >= 20 && mainMinutes >= 30 && speakingMinutes >= 10) {
+  if (momoMinutes >= 20 && mainMinutes >= 30 && speakingMinutes >= 10 && noCompensatoryStayingUp) {
     return "yellow";
   }
 
