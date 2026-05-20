@@ -1,5 +1,5 @@
 import { DailyRecord } from "../types";
-import { getTodayStr, getPreviousDateKey, getNextDateKey } from "./date";
+import { getTodayStr, getPreviousDateKey, getNextDateKey, normalizeDateString, parseRecordDate } from "./date";
 import { format, subDays, addDays } from "date-fns";
 
 export function getRecentRecords(records: DailyRecord[], days: number): DailyRecord[] {
@@ -17,81 +17,114 @@ export function getStatusCounts(records: DailyRecord[]) {
   return { green, yellow, red, pending };
 }
 
+type NormalizedRecord = DailyRecord & {
+  normalizedDate: string;
+  timestamp: number;
+};
+
+function normalizeRecords(records: DailyRecord[]): NormalizedRecord[] {
+  return records
+    .map((record) => {
+      const normalizedDate = normalizeDateString(record.date);
+      if (!normalizedDate) return null;
+
+      return {
+        ...record,
+        normalizedDate,
+        timestamp: parseRecordDate(record.date),
+      };
+    })
+    .filter((record): record is NormalizedRecord => Boolean(record))
+    .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+function buildRecordByDateMap(records: DailyRecord[]): Map<string, NormalizedRecord> {
+  const map = new Map<string, NormalizedRecord>();
+
+  normalizeRecords(records).forEach((record) => {
+    const existing = map.get(record.normalizedDate);
+
+    if (!existing) {
+      map.set(record.normalizedDate, record);
+      return;
+    }
+
+    const existingTime = existing.updatedAt ? Date.parse(existing.updatedAt) : 0;
+    const nextTime = record.updatedAt ? Date.parse(record.updatedAt) : 0;
+
+    if (nextTime >= existingTime) {
+      map.set(record.normalizedDate, record);
+    }
+  });
+
+  return map;
+}
+
 export function getCurrentStreak(records: DailyRecord[]) {
-  if (records.length === 0) return { streak: 0, lastRedDate: null };
-  
+  const recordMap = buildRecordByDateMap(records);
+  const sorted = Array.from(recordMap.values()).sort(
+    (a, b) => b.timestamp - a.timestamp
+  );
+
+  if (sorted.length === 0) return { streak: 0, lastRedDate: null };
+
+  let expectedDate = sorted[0].normalizedDate;
   let streak = 0;
   let lastRedDate: string | null = null;
-  const today = getTodayStr();
-  let expectedDate = today;
 
-  for (const r of records) {
-    if (r.date > expectedDate) continue;
+  while (true) {
+    const record = recordMap.get(expectedDate);
 
-    if (r.date !== expectedDate) {
-      break; 
-    }
-
-    if (r.status === "pending" || !r.status) {
-      if (r.date === today) {
-        expectedDate = getPreviousDateKey(expectedDate) || "";
-        continue;
-      } else {
-        // Pending in the past acts as a transparent record but if the day ended pending, it counts as failed gap?
-        // Wait! The user said: "pending 是透明记录. 缺失自然日 = 断线"
-        // And example 3: "2026-05-20 pending, 2026-05-19 green, 2026-05-18 yellow => 今日 pending 暂不打断，当前连续可从 19 号算"
-        // But what if 19 is pending? "pending 不算成功，不算失败，不增加 streak，不清零 streak"
-        // Ah! If 19 is pending, expectedDate just moves to 18!
-        expectedDate = getPreviousDateKey(expectedDate) || "";
-        continue;
-      }
-    }
-
-    if (r.status === "red") {
-      lastRedDate = r.date;
+    if (!record) {
       break;
     }
 
-    if (r.status === "green" || r.status === "yellow") {
-      streak++;
-      expectedDate = getPreviousDateKey(expectedDate) || "";
+    if (record.status === "red") {
+      lastRedDate = record.normalizedDate;
+      break;
     }
+
+    if (record.status === "green" || record.status === "yellow") {
+      streak += 1;
+    }
+
+    const prev = getPreviousDateKey(expectedDate);
+    if (!prev) break;
+    expectedDate = prev;
   }
+
   return { streak, lastRedDate };
 }
 
 export function getLongestStreak(records: DailyRecord[]) {
-  let maxStreak = 0;
-  let currentStreak = 0;
-  let expectedNextDate: string | null = null;
-  
-  const reversed = [...records].reverse();
-  for (const r of reversed) {
-    if (r.status === "pending" || !r.status) {
-      if (expectedNextDate && r.date === expectedNextDate) {
-        expectedNextDate = getNextDateKey(expectedNextDate);
-      } else {
-        expectedNextDate = getNextDateKey(r.date);
+  const recordMap = buildRecordByDateMap(records);
+  const sorted = Array.from(recordMap.values()).sort(
+    (a, b) => a.timestamp - b.timestamp
+  );
+
+  let current = 0;
+  let longest = 0;
+  let previousDate: string | null = null;
+
+  for (const record of sorted) {
+    if (previousDate) {
+      const expectedNext = getNextDateKey(previousDate);
+      if (record.normalizedDate !== expectedNext) {
+        current = 0;
       }
-      continue;
     }
 
-    if (expectedNextDate && r.date !== expectedNextDate) {
-      currentStreak = 0;
+    if (record.status === "red") {
+      current = 0;
+    } else if (record.status === "green" || record.status === "yellow") {
+      current += 1;
+      longest = Math.max(longest, current);
     }
 
-    if (r.status === "red") {
-      currentStreak = 0;
-      expectedNextDate = getNextDateKey(r.date);
-    } else if (r.status === "green" || r.status === "yellow") {
-      currentStreak++;
-      if (currentStreak > maxStreak) {
-        maxStreak = currentStreak;
-      }
-      expectedNextDate = getNextDateKey(r.date);
-    }
+    previousDate = record.normalizedDate;
   }
-  return maxStreak;
+
+  return longest;
 }
 
 export function getModuleMinutes(records: DailyRecord[]) {
