@@ -96,11 +96,11 @@ export function HistoryPage({ appData }: { appData: any }) {
                 className="p-4 cursor-pointer hover:bg-slate-50 flex items-center justify-between"
                 onClick={() => toggleExpand(record.date)}
               >
-                <div className="flex flex-col flex-1 pr-4">
+                <div className="flex flex-col flex-1 pr-4 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-bold text-slate-800">{formatDateStr(record.date)}</span>
                     <span className="text-xs font-semibold text-slate-400">{record.weekday}</span>
-                    {record.exercised && <span className="text-[10px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded font-bold uppercase">Workout</span>}
+                    {record.exercised && <span className="text-[10px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Workout</span>}
                   </div>
                   <div className="text-[10px] font-bold tracking-wider text-slate-400 uppercase flex flex-wrap gap-x-3 gap-y-1">
                     <span>{record.dayType.replace("_", " ")}</span>
@@ -117,7 +117,7 @@ export function HistoryPage({ appData }: { appData: any }) {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className={cn("px-2.5 py-1 rounded-lg border flex items-center justify-center font-bold text-[10px] uppercase", statusColors[record.status || "pending"])}>
-                    {record.status}
+                    {record.status || "pending"}
                   </div>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
                 </div>
@@ -153,13 +153,17 @@ function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRec
         return t;
       });
       const updated = { ...prev, tasks: newTasks };
-      updated.status = calculateColorStatus(updated);
-      return updated;
+      const { syncRecordFieldsFromSleepControlTasks } = require("../utils/tasks");
+      return syncRecordFieldsFromSleepControlTasks(updated);
     });
   };
 
   const handleRecordUpdate = (field: keyof DailyRecord, value: any) => {
     updateRecord(record.date, (prev: DailyRecord) => {
+      if (field === "stoppedAfter2230" || field === "noCompensatoryStayingUp") {
+        const { syncSleepControlTasks } = require("../utils/tasks");
+        return syncSleepControlTasks(prev, { [field]: value });
+      }
       const updated = { ...prev, [field]: value };
       updated.status = calculateColorStatus(updated);
       return updated;

@@ -404,8 +404,8 @@ function TrackerDaily({
         tasks: newTasks,
         updatedAt: new Date().toISOString(),
       };
-      updated.status = calculateColorStatus(updated);
-      return updated;
+      const { syncRecordFieldsFromSleepControlTasks } = require("../utils/tasks");
+      return syncRecordFieldsFromSleepControlTasks(updated);
     });
   };
 
