@@ -8,6 +8,7 @@ import {
 import { 
   calculateColorStatus, isMomoTask, isMainTaskForDay, isSpeakingTask 
 } from "../utils/status";
+import { syncSleepControlTasks, syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
 
 // Helper to extract minutes
 function getRecordMetrics(record: DailyRecord) {
@@ -153,7 +154,6 @@ function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRec
         return t;
       });
       const updated = { ...prev, tasks: newTasks };
-      const { syncRecordFieldsFromSleepControlTasks } = require("../utils/tasks");
       return syncRecordFieldsFromSleepControlTasks(updated);
     });
   };
@@ -161,7 +161,6 @@ function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRec
   const handleRecordUpdate = (field: keyof DailyRecord, value: any) => {
     updateRecord(record.date, (prev: DailyRecord) => {
       if (field === "stoppedAfter2230" || field === "noCompensatoryStayingUp") {
-        const { syncSleepControlTasks } = require("../utils/tasks");
         return syncSleepControlTasks(prev, { [field]: value });
       }
       const updated = { ...prev, [field]: value };
@@ -190,14 +189,16 @@ function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRec
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">Plan {task.plannedMinutes}m</span>
-                <input 
-                  type="number"
-                  min="0"
-                  className="w-12 text-center text-xs font-mono py-1 border rounded-md focus:outline-none focus:border-indigo-500"
-                  value={task.actualMinutes || ""}
-                  placeholder="0"
-                  onChange={(e) => handleTaskUpdate(task.id, "actualMinutes", parseInt(e.target.value) || 0)}
-                />
+                {task.category !== "sleep_control" && (
+                  <input 
+                    type="number"
+                    min="0"
+                    className="w-12 text-center text-xs font-mono py-1 border rounded-md focus:outline-none focus:border-indigo-500"
+                    value={task.actualMinutes || ""}
+                    placeholder="0"
+                    onChange={(e) => handleTaskUpdate(task.id, "actualMinutes", parseInt(e.target.value) || 0)}
+                  />
+                )}
               </div>
             </div>
             <input 

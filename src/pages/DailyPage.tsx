@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { subDays, format } from "date-fns";
+import { syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
 
 interface DailyPageProps {
   appData: any; // ReturnType of useAppData
@@ -404,7 +405,6 @@ function TrackerDaily({
         tasks: newTasks,
         updatedAt: new Date().toISOString(),
       };
-      const { syncRecordFieldsFromSleepControlTasks } = require("../utils/tasks");
       return syncRecordFieldsFromSleepControlTasks(updated);
     });
   };
@@ -426,8 +426,7 @@ function TrackerDaily({
         tasks: newTasks,
         updatedAt: new Date().toISOString(),
       };
-      updated.status = calculateColorStatus(updated);
-      return updated;
+      return syncRecordFieldsFromSleepControlTasks(updated);
     });
   };
 
@@ -675,20 +674,26 @@ function TrackerDaily({
                 <label className="text-[10px] font-bold text-slate-400 uppercase hidden sm:block">
                   Actual
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={task.actualMinutes || ""}
-                  onChange={(e) => updateTaskMinutes(task.id, parseInt(e.target.value) || 0)}
-                  onClick={(e) => e.stopPropagation()}
-                  placeholder={task.plannedMinutes.toString()}
-                  className={cn(
-                    "w-[4rem] text-center p-1.5 rounded-lg text-xs font-mono border bg-white focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all",
-                    task.actualMinutes > 0
-                      ? "border-emerald-200 text-emerald-800 font-bold bg-emerald-50"
-                      : "border-slate-200 text-slate-600"
-                  )}
-                />
+                {task.category !== "sleep_control" ? (
+                  <input
+                    type="number"
+                    min="0"
+                    value={task.actualMinutes || ""}
+                    onChange={(e) => updateTaskMinutes(task.id, parseInt(e.target.value) || 0)}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder={task.plannedMinutes.toString()}
+                    className={cn(
+                      "w-[4rem] text-center p-1.5 rounded-lg text-xs font-mono border bg-white focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all",
+                      task.actualMinutes > 0
+                        ? "border-emerald-200 text-emerald-800 font-bold bg-emerald-50"
+                        : "border-slate-200 text-slate-600"
+                    )}
+                  />
+                ) : (
+                  <div className="w-[4rem] text-center p-1.5 rounded-lg text-xs font-mono border border-transparent text-slate-300">
+                    --
+                  </div>
+                )}
               </div>
             </div>
           ))}
