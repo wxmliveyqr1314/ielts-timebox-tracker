@@ -430,19 +430,6 @@ function TrackerDaily({
     });
   };
 
-  const toggleHabit = (
-    field: "stoppedAfter2230" | "noCompensatoryStayingUp",
-  ) => {
-    updateRecord(today, (prev: DailyRecord) => {
-      const updated = {
-        ...prev,
-        [field]: !prev[field],
-        updatedAt: new Date().toISOString(),
-      };
-      updated.status = calculateColorStatus(updated);
-      return updated;
-    });
-  };
 
   const handleApplyConfig = () => {
     const hasProgress = record.tasks.some(

@@ -189,7 +189,7 @@ function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRec
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">Plan {task.plannedMinutes}m</span>
-                {task.category !== "sleep_control" && (
+                {task.category !== "sleep_control" ? (
                   <input 
                     type="number"
                     min="0"
@@ -198,6 +198,10 @@ function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRec
                     placeholder="0"
                     onChange={(e) => handleTaskUpdate(task.id, "actualMinutes", parseInt(e.target.value) || 0)}
                   />
+                ) : (
+                  <div className="w-12 text-center text-xs font-mono py-1 border border-transparent text-slate-300">
+                    --
+                  </div>
                 )}
               </div>
             </div>
