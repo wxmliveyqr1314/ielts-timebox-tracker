@@ -7,69 +7,87 @@ const defaultState: AppState = {
   records: {},
 };
 
-export function useAppData() {
-  const [data, setData] = useState<AppState>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored) as AppState;
-      }
-    } catch (e) {
-      console.warn("Failed to load state from localStorage", e);
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          localStorage.setItem("ielts_timebox_tracker_corrupt_backup_v1", stored);
-          alert("本地数据读取失败 (JSON 损坏)。损坏的数据已备份到系统剪贴板/备份区，应用将进入初始空数据状态。请及时导出备份！");
-        } catch (backupError) {
-          console.error("Failed to backup corrupt data", backupError);
-        }
+const loadState = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return { data: JSON.parse(stored) as AppState, corrupted: false };
+    }
+  } catch (e) {
+    console.warn("Failed to load state from localStorage", e);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        localStorage.setItem("ielts_timebox_tracker_corrupt_backup_v1", stored);
+        alert("本地数据读取失败 (JSON 损坏)。损坏的数据已备份。安全模式下不会立即覆盖原始损坏数据。");
+      } catch (backupError) {
+        console.error("Failed to backup corrupt data", backupError);
       }
     }
-    return defaultState;
-  });
+    return { data: defaultState, corrupted: true };
+  }
+  return { data: defaultState, corrupted: false };
+};
+
+export function useAppData() {
+  const [appState, setAppState] = useState(() => loadState());
+  const [hasMutated, setHasMutated] = useState(false);
+  const data = appState.data;
 
   useEffect(() => {
+    if (appState.corrupted && !hasMutated) {
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
       console.warn("Failed to save state to localStorage", e);
     }
-  }, [data]);
+  }, [data, appState.corrupted, hasMutated]);
 
   const updateRecord = (
     date: string,
     recordUpdater: (prev: DailyRecord | undefined) => DailyRecord,
   ) => {
-    setData((prev) => {
-      const newRecord = recordUpdater(prev.records[date]);
+    setHasMutated(true);
+    setAppState((prev) => {
+      const newRecord = recordUpdater(prev.data.records[date]);
       return {
         ...prev,
-        records: {
-          ...prev.records,
-          [date]: newRecord,
-        },
+        data: {
+          ...prev.data,
+          records: {
+            ...prev.data.records,
+            [date]: newRecord,
+          },
+        }
       };
     });
   };
 
   const deleteRecord = (date: string) => {
-    setData((prev) => {
-      const newRecords = { ...prev.records };
+    setHasMutated(true);
+    setAppState((prev) => {
+      const newRecords = { ...prev.data.records };
       delete newRecords[date];
       return {
         ...prev,
-        records: newRecords,
+        data: {
+          ...prev.data,
+          records: newRecords,
+        }
       };
     });
   };
 
   const importData = (importedState: AppState) => {
-    setData(importedState);
+    setHasMutated(true);
+    setAppState(prev => ({ ...prev, data: importedState }));
   };
 
   const clearData = () => {
-    setData(defaultState);
+    setHasMutated(true);
+    setAppState(prev => ({ ...prev, data: defaultState }));
   };
 
   return { data, updateRecord, deleteRecord, importData, clearData };

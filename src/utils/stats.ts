@@ -1,5 +1,5 @@
 import { DailyRecord } from "../types";
-import { getTodayStr } from "./date";
+import { getTodayStr, getPreviousDateKey, getNextDateKey } from "./date";
 import { format, subDays, addDays } from "date-fns";
 
 export function getRecentRecords(records: DailyRecord[], days: number): DailyRecord[] {
@@ -34,10 +34,16 @@ export function getCurrentStreak(records: DailyRecord[]) {
 
     if (r.status === "pending" || !r.status) {
       if (r.date === today) {
-        expectedDate = format(subDays(new Date(expectedDate), 1), "yyyy-MM-dd");
+        expectedDate = getPreviousDateKey(expectedDate) || "";
         continue;
       } else {
-        break;
+        // Pending in the past acts as a transparent record but if the day ended pending, it counts as failed gap?
+        // Wait! The user said: "pending 是透明记录. 缺失自然日 = 断线"
+        // And example 3: "2026-05-20 pending, 2026-05-19 green, 2026-05-18 yellow => 今日 pending 暂不打断，当前连续可从 19 号算"
+        // But what if 19 is pending? "pending 不算成功，不算失败，不增加 streak，不清零 streak"
+        // Ah! If 19 is pending, expectedDate just moves to 18!
+        expectedDate = getPreviousDateKey(expectedDate) || "";
+        continue;
       }
     }
 
@@ -48,7 +54,7 @@ export function getCurrentStreak(records: DailyRecord[]) {
 
     if (r.status === "green" || r.status === "yellow") {
       streak++;
-      expectedDate = format(subDays(new Date(expectedDate), 1), "yyyy-MM-dd");
+      expectedDate = getPreviousDateKey(expectedDate) || "";
     }
   }
   return { streak, lastRedDate };
@@ -62,8 +68,11 @@ export function getLongestStreak(records: DailyRecord[]) {
   const reversed = [...records].reverse();
   for (const r of reversed) {
     if (r.status === "pending" || !r.status) {
-      currentStreak = 0;
-      expectedNextDate = null;
+      if (expectedNextDate && r.date === expectedNextDate) {
+        expectedNextDate = getNextDateKey(expectedNextDate);
+      } else {
+        expectedNextDate = getNextDateKey(r.date);
+      }
       continue;
     }
 
@@ -73,13 +82,13 @@ export function getLongestStreak(records: DailyRecord[]) {
 
     if (r.status === "red") {
       currentStreak = 0;
-      expectedNextDate = format(addDays(new Date(r.date), 1), "yyyy-MM-dd");
+      expectedNextDate = getNextDateKey(r.date);
     } else if (r.status === "green" || r.status === "yellow") {
       currentStreak++;
       if (currentStreak > maxStreak) {
         maxStreak = currentStreak;
       }
-      expectedNextDate = format(addDays(new Date(r.date), 1), "yyyy-MM-dd");
+      expectedNextDate = getNextDateKey(r.date);
     }
   }
   return maxStreak;
