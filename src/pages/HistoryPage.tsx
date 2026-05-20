@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AppState, DailyRecord } from "../types";
-import { formatDateStr } from "../utils/date";
+import { formatDateStr, sortRecordsByDateDesc } from "../utils/date";
 import { cn } from "../lib/utils";
 import { 
   CheckCircle2, ChevronDown, ChevronUp, Calendar
@@ -35,8 +35,8 @@ function getRecordMetrics(record: DailyRecord) {
 }
 
 export function HistoryPage({ appData }: { appData: any }) {
-  const records = Object.values(appData.data.records as Record<string, DailyRecord>).sort((a, b) =>
-    b.date.localeCompare(a.date),
+  const records = sortRecordsByDateDesc(
+    Object.values(appData.data.records as Record<string, DailyRecord>)
   );
 
   const [expandedDate, setExpandedDate] = useState<string | null>(null);

@@ -39,8 +39,10 @@ export function SettingsPage({
         const result = event.target?.result as string;
         const parsed = JSON.parse(result) as AppState;
         if (parsed.records) {
-          appData.importData(parsed);
-          setAlertMessage("Data imported successfully!");
+          if (window.confirm("此操作会覆盖当前所有本地记录，且无法自动恢复。建议先导出备份。确认继续吗？")) {
+            appData.importData(parsed);
+            setAlertMessage("Data imported successfully!");
+          }
         } else {
           setAlertMessage("Invalid format.");
         }

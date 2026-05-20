@@ -1,4 +1,6 @@
 import { DailyRecord } from "../types";
+import { getTodayStr } from "./date";
+import { format, subDays, addDays } from "date-fns";
 
 export function getRecentRecords(records: DailyRecord[], days: number): DailyRecord[] {
   return records.slice(0, days);
@@ -16,16 +18,37 @@ export function getStatusCounts(records: DailyRecord[]) {
 }
 
 export function getCurrentStreak(records: DailyRecord[]) {
+  if (records.length === 0) return { streak: 0, lastRedDate: null };
+  
   let streak = 0;
   let lastRedDate: string | null = null;
+  const today = getTodayStr();
+  let expectedDate = today;
+
   for (const r of records) {
-    if (r.status === "green" || r.status === "yellow") {
-      streak++;
-    } else if (r.status === "red") {
+    if (r.date > expectedDate) continue;
+
+    if (r.date !== expectedDate) {
+      break; 
+    }
+
+    if (r.status === "pending" || !r.status) {
+      if (r.date === today) {
+        expectedDate = format(subDays(new Date(expectedDate), 1), "yyyy-MM-dd");
+        continue;
+      } else {
+        break;
+      }
+    }
+
+    if (r.status === "red") {
       lastRedDate = r.date;
       break;
-    } else if (r.status === "pending" || !r.status) {
-      // pending does not break or add to streak
+    }
+
+    if (r.status === "green" || r.status === "yellow") {
+      streak++;
+      expectedDate = format(subDays(new Date(expectedDate), 1), "yyyy-MM-dd");
     }
   }
   return { streak, lastRedDate };
@@ -34,15 +57,29 @@ export function getCurrentStreak(records: DailyRecord[]) {
 export function getLongestStreak(records: DailyRecord[]) {
   let maxStreak = 0;
   let currentStreak = 0;
+  let expectedNextDate: string | null = null;
+  
   const reversed = [...records].reverse();
   for (const r of reversed) {
-    if (r.status === "green" || r.status === "yellow") {
+    if (r.status === "pending" || !r.status) {
+      currentStreak = 0;
+      expectedNextDate = null;
+      continue;
+    }
+
+    if (expectedNextDate && r.date !== expectedNextDate) {
+      currentStreak = 0;
+    }
+
+    if (r.status === "red") {
+      currentStreak = 0;
+      expectedNextDate = format(addDays(new Date(r.date), 1), "yyyy-MM-dd");
+    } else if (r.status === "green" || r.status === "yellow") {
       currentStreak++;
       if (currentStreak > maxStreak) {
         maxStreak = currentStreak;
       }
-    } else if (r.status === "red") {
-      currentStreak = 0;
+      expectedNextDate = format(addDays(new Date(r.date), 1), "yyyy-MM-dd");
     }
   }
   return maxStreak;
@@ -87,7 +124,8 @@ export function getSleepControlStats(records: DailyRecord[]) {
   let compensatoryStayingUp = 0;
 
   records.forEach(r => {
-    // Only count if it's explicitly false or true (skip if missing/undefined in old pending days)
+    if (r.status === "pending" || !r.status) return;
+
     if (r.stoppedAfter2230 === true) stoppedOnTime++;
     else if (r.stoppedAfter2230 === false) lateNewTask++;
 

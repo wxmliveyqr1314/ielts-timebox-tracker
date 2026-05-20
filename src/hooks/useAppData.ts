@@ -16,6 +16,15 @@ export function useAppData() {
       }
     } catch (e) {
       console.warn("Failed to load state from localStorage", e);
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          localStorage.setItem("ielts_timebox_tracker_corrupt_backup_v1", stored);
+          alert("本地数据读取失败 (JSON 损坏)。损坏的数据已备份到系统剪贴板/备份区，应用将进入初始空数据状态。请及时导出备份！");
+        } catch (backupError) {
+          console.error("Failed to backup corrupt data", backupError);
+        }
+      }
     }
     return defaultState;
   });

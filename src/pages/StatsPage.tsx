@@ -11,10 +11,11 @@ import {
 } from "../utils/stats";
 import { Flame, Clock, Mic, Activity, Moon, BookOpen, Headphones, ShieldAlert, Award } from "lucide-react";
 import { cn } from "../lib/utils";
+import { sortRecordsByDateDesc } from "../utils/date";
 
 export function StatsPage({ appData }: { appData: any }) {
-  const allRecords = Object.values(appData.data.records as Record<string, DailyRecord>).sort((a, b) =>
-    b.date.localeCompare(a.date)
+  const allRecords = sortRecordsByDateDesc(
+    Object.values(appData.data.records as Record<string, DailyRecord>)
   );
 
   const recent7 = getRecentRecords(allRecords, 7);
