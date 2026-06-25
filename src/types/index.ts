@@ -95,4 +95,10 @@ export interface AppSettings {
 export interface AppState {
   records: Record<string, DailyRecord>;
   settings?: AppSettings;
+  sync?: {
+    schemaVersion: 1;
+    deviceId: string;
+    deletedRecords?: Record<string, string>;
+    lastSyncAt?: string;
+  };
 }
