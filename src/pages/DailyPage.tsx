@@ -10,6 +10,7 @@ import {
 import { getTodayStr, formatDateStr } from "../utils/date";
 import { calculateColorStatus } from "../utils/status";
 import { generateDailyPlan } from "../utils/tasks";
+import { getRecommendedFocusMode } from "../utils/focusRecommendation";
 import {
   CheckCircle2,
   Dumbbell,
@@ -39,6 +40,7 @@ export function DailyPage({ appData }: DailyPageProps) {
         today={today}
         updateRecord={appData.updateRecord}
         yesterdayRecord={yesterdayRecord}
+        records={appData.data.records}
       />
     );
   }
@@ -248,18 +250,19 @@ function SetupDaily({
   today,
   updateRecord,
   yesterdayRecord,
+  records,
 }: {
   today: string;
   updateRecord: any;
   yesterdayRecord?: DailyRecord;
+  records: Record<string, DailyRecord>;
 }) {
+  const [recommendation] = useState(() => getRecommendedFocusMode(records, today));
   const isYesterdayRed = yesterdayRecord?.status === "red";
 
   const [exercised, setExercised] = useState(false);
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>("normal");
-  const [dayType, setDayType] = useState<DayType>(
-    isYesterdayRed ? "recovery" : "listening_focus",
-  );
+  const [dayType, setDayType] = useState<DayType>(recommendation.recommendedMode);
   const [workdayBonus, setWorkdayBonus] = useState<WorkdayBonus>({
     passiveListeningMinutes: 0,
     momoMinutes: 0,
@@ -294,19 +297,72 @@ function SetupDaily({
     }));
   };
 
+  const renderRecommendationBanner = () => {
+    let title = "Recommended: ";
+    if (recommendation.recommendedMode === "listening_focus") title += "Dictation";
+    else if (recommendation.recommendedMode === "reading_focus") title += "Reading";
+    else if (recommendation.recommendedMode === "speaking_focus") title += "Speaking";
+    else title += "Recovery";
+
+    let desc = "";
+    switch (recommendation.reason) {
+      case "first_day":
+        desc = "Welcome! Starting with a Dictation day is recommended.";
+        break;
+      case "advance_after_green":
+        desc = "Yesterday's focus was Green, so today's focus advances.";
+        break;
+      case "recovery_after_non_green":
+        desc = "Yesterday was not completed as Green, so today uses a Recovery plan.";
+        break;
+      case "continue_recovery":
+        desc = "Yesterday's Recovery was not Green, so we continue Recovery today.";
+        break;
+      case "resume_after_recovery":
+        desc = "Recovery was successful! Resuming the previous normal focus mode.";
+        break;
+      case "missing_previous_day":
+        desc = "Missing recent records. Let's do a Recovery day to get back on track.";
+        break;
+    }
+
+    return (
+      <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5">
+        <h3 className="text-indigo-800 font-bold text-sm mb-1">
+          {title}
+        </h3>
+        <p className={`text-indigo-600 text-xs leading-relaxed ${recommendation.basedOnDate ? 'mb-3' : ''}`}>
+          {desc}
+        </p>
+        {recommendation.basedOnDate && (
+          <div className="flex flex-wrap gap-2">
+            <span className="text-[10px] bg-indigo-100/80 text-indigo-700 px-2 py-1 rounded-md font-bold tracking-wide">
+              {recommendation.basedOnDate}
+            </span>
+            {recommendation.basedOnStatus && (
+              <span className={`text-[10px] px-2 py-1 rounded-md font-bold tracking-wide uppercase ${
+                recommendation.basedOnStatus === 'green' ? 'bg-emerald-100 text-emerald-700' :
+                recommendation.basedOnStatus === 'yellow' ? 'bg-amber-100 text-amber-700' :
+                recommendation.basedOnStatus === 'red' ? 'bg-rose-100 text-rose-700' :
+                'bg-slate-200 text-slate-700'
+              }`}>
+                {recommendation.basedOnStatus}
+              </span>
+            )}
+            {recommendation.basedOnMode && (
+              <span className="text-[10px] bg-indigo-100/80 text-indigo-700 px-2 py-1 rounded-md font-bold tracking-wide uppercase">
+                {recommendation.basedOnMode.replace('_focus', '')}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      {isYesterdayRed && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5">
-          <h3 className="text-rose-800 font-bold text-sm mb-1">
-            Recovery Recommendation
-          </h3>
-          <p className="text-rose-600 text-xs leading-relaxed">
-            Yesterday was a Red day. A Recovery Day is strongly recommended
-            today to bounce back without burnout.
-          </p>
-        </div>
-      )}
+      {renderRecommendationBanner()}
 
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">
