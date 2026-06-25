@@ -1,6 +1,8 @@
 import { useRef, ChangeEvent, useState } from "react";
 import { AppState } from "../types";
 import { Download, Upload, Trash2 } from "lucide-react";
+import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from "../utils/version";
+import { format } from "date-fns";
 
 export function SettingsPage({
   appData,
@@ -163,6 +165,15 @@ export function SettingsPage({
             Privacy First: Your data stays in your browser's LocalStorage. No
             cookies, no trackers.
           </p>
+
+          <div className="mt-8 pt-4 border-t border-slate-700/50 text-center text-[10px] text-slate-500 font-mono flex flex-col gap-1">
+            <p>
+              v{APP_VERSION} • {BUILD_COMMIT}
+            </p>
+            <p>
+              {BUILD_TIME !== 'unknown' ? format(new Date(BUILD_TIME), "yyyy-MM-dd HH:mm") : 'unknown build time'}
+            </p>
+          </div>
         </div>
       </div>
     </div>
