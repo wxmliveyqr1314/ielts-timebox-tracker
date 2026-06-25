@@ -1,7 +1,8 @@
 import { useRef, ChangeEvent, useState } from "react";
 import { AppState } from "../types";
-import { Download, Upload, Trash2 } from "lucide-react";
+import { Download, Upload, Trash2, Cloud, Mail } from "lucide-react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from "../utils/version";
+import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { format } from "date-fns";
 
 export function SettingsPage({
@@ -26,6 +27,21 @@ export function SettingsPage({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const { session, email, loading, configured, error, sendMagicLink, signOut } = useSupabaseAuth();
+  const [authEmail, setAuthEmail] = useState("");
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
+
+  const handleMagicLink = async () => {
+    if (!authEmail) return;
+    const { error } = await sendMagicLink(authEmail);
+    if (error) {
+      setAuthMessage(`Error: ${error.message}`);
+    } else {
+      setAuthMessage("Magic link sent! Check your email.");
+      setAuthEmail("");
+    }
   };
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -110,6 +126,78 @@ export function SettingsPage({
         </div>
       )}
       <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-lg">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
+          Cloud Sync (Phase 1)
+        </h2>
+
+        <div className="space-y-4 mb-8">
+          {error && (
+            <div className="p-3 bg-rose-500/10 text-rose-500 text-xs rounded-xl border border-rose-500/20">
+              {error}
+            </div>
+          )}
+          {authMessage && (
+            <div className="p-3 bg-emerald-500/10 text-emerald-500 text-xs rounded-xl border border-emerald-500/20">
+              {authMessage}
+            </div>
+          )}
+
+          <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-5 h-5 text-indigo-400" />
+                <span className="font-bold text-sm">Supabase Auth</span>
+              </div>
+              <div className="text-xs text-slate-400">
+                Status: {loading ? "Signing in..." : (!configured ? "Not configured" : (session ? "Signed in" : "Signed out"))}
+              </div>
+            </div>
+
+            <p className="text-[10px] text-slate-400 mb-4">
+              This phase only implements authentication. Daily records will NOT be synced yet.
+            </p>
+
+            {!configured ? (
+              <div className="text-xs text-rose-400 p-3 bg-rose-400/10 rounded-lg">
+                Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
+              </div>
+            ) : session ? (
+              <div className="flex flex-col gap-3">
+                <div className="text-sm bg-black/20 p-3 rounded-lg border border-white/5">
+                  Account: <span className="font-mono text-indigo-300">{email}</span>
+                </div>
+                <button
+                  onClick={signOut}
+                  disabled={loading}
+                  className="w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
+                <button
+                  onClick={handleMagicLink}
+                  disabled={loading || !authEmail}
+                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  {loading ? "Sending..." : "Send Magic Link"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
           Local-First Backup
         </h2>
