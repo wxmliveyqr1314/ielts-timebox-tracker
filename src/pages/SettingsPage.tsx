@@ -14,6 +14,13 @@ function formatDeviceId(id: string | null) {
   return `${id.slice(0, 6)}...${id.slice(-4)}`;
 }
 
+function formatSyncResult(uploaded: number, downloaded: number, skipped: number) {
+  if (uploaded === 0 && downloaded === 0) {
+    return "Sync complete: no changes.";
+  }
+  return `Sync complete: ${uploaded} uploaded, ${downloaded} downloaded, ${skipped} already up to date.`;
+}
+
 export function SettingsPage({
   appData,
 }: {
@@ -129,11 +136,7 @@ export function SettingsPage({
       setSyncResult(`Sync failed. Your local data was kept safe. (${result.errors[0]})`);
     } else {
       appData.replaceData(result.mergedState);
-      if (result.uploaded === 0 && result.downloaded === 0) {
-        setSyncResult(`Sync complete: no changes.`);
-      } else {
-        setSyncResult(`Sync complete: ${result.uploaded} uploaded, ${result.downloaded} downloaded, ${result.skipped} already up to date.`);
-      }
+      setSyncResult(formatSyncResult(result.uploaded, result.downloaded, result.skipped));
     }
 
     setIsSyncing(false);
@@ -143,10 +146,7 @@ export function SettingsPage({
     if (syncResult) return syncResult;
     const lsr = appData.data.sync?.lastSyncResult;
     if (!lsr) return "No recent sync result";
-    if (lsr.uploaded === 0 && lsr.downloaded === 0 && lsr.skipped === 0) {
-      return "Last successful sync: no changes.";
-    }
-    return `Last successful sync: uploaded ${lsr.uploaded}, downloaded ${lsr.downloaded}, skipped ${lsr.skipped}.`;
+    return formatSyncResult(lsr.uploaded, lsr.downloaded, lsr.skipped);
   };
 
   const triggerSync = () => {
