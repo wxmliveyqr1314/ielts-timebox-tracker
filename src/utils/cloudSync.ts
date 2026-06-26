@@ -44,7 +44,22 @@ export function mergeLocalAndCloudRecords(
 
   const cloudMap = new Map<string, any>();
   for (const r of cloudRecords) {
-    cloudMap.set(r.date_key, r);
+    const normKey = normalizeDateString(r.date_key);
+    if (!normKey) continue;
+
+    if (!r.record_json || typeof r.record_json !== 'object' || Array.isArray(r.record_json)) {
+      continue;
+    }
+
+    if (r.record_json.date) {
+      if (!normalizeDateString(r.record_json.date)) {
+        continue;
+      }
+    }
+
+    r.record_json.date = normKey;
+    r.date_key = normKey;
+    cloudMap.set(normKey, r);
   }
 
   let uploaded = 0;
