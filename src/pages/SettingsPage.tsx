@@ -4,6 +4,9 @@ import { Download, Upload, Trash2, Cloud, Mail } from "lucide-react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from "../utils/version";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { format } from "date-fns";
+import { syncDailyRecords } from "../utils/cloudSync";
+import { supabase } from "../utils/supabaseClient";
+import { getOrCreateDeviceId } from "../hooks/useAppData";
 
 export function SettingsPage({
   appData,
@@ -12,6 +15,7 @@ export function SettingsPage({
     data: AppState;
     importData: (data: AppState) => void;
     clearData: () => void;
+    replaceData: (data: AppState) => void;
   };
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +49,54 @@ export function SettingsPage({
   };
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showFirstSyncConfirm, setShowFirstSyncConfirm] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
+  const handleSync = async () => {
+    let deviceId: string;
+    try {
+      deviceId = getOrCreateDeviceId();
+    } catch (e) {
+      setSyncResult(`Error: Could not generate device ID`);
+      return;
+    }
+
+    if (!session?.user?.id || !supabase) return;
+
+    setIsSyncing(true);
+    setSyncResult(null);
+
+    const result = await syncDailyRecords({
+      localState: appData.data,
+      userId: session.user.id,
+      deviceId,
+      supabase
+    });
+
+    if (result.errors.length > 0) {
+      setSyncResult(`Error: ${result.errors.join(', ')}`);
+    } else {
+      appData.replaceData(result.mergedState);
+      setSyncResult(`Synced: uploaded ${result.uploaded}, downloaded ${result.downloaded}, skipped ${result.skipped}`);
+    }
+
+    setIsSyncing(false);
+  };
+
+  const triggerSync = () => {
+    if (!appData.data.sync?.lastSyncAt) {
+      setShowFirstSyncConfirm(true);
+    } else {
+      handleSync();
+    }
+  };
+
+  const confirmFirstSync = () => {
+    setShowFirstSyncConfirm(false);
+    handleSync();
+  };
 
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -95,6 +146,34 @@ export function SettingsPage({
           >
             ×
           </button>
+        </div>
+      )}
+      {showFirstSyncConfirm && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 flex flex-col items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="font-bold text-lg text-white mb-2">
+              First Cloud Sync
+            </h3>
+            <p className="text-sm text-slate-400 mb-6">
+              Before first cloud sync, please export a local JSON backup.<br/><br/>
+              Cloud sync will merge local and cloud records by date. Newer updatedAt wins.<br/><br/>
+              Continue?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowFirstSyncConfirm(false)}
+                className="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmFirstSync}
+                className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-900/50"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {showConfirm && (
@@ -154,7 +233,7 @@ export function SettingsPage({
             </div>
 
             <p className="text-[10px] text-slate-400 mb-4">
-              This phase only implements authentication. Daily records will NOT be synced yet.
+              Manual sync is available. Daily records sync only when you tap Sync now.
             </p>
 
             {!configured ? (
@@ -166,9 +245,29 @@ export function SettingsPage({
                 <div className="text-sm bg-black/20 p-3 rounded-lg border border-white/5">
                   Account: <span className="font-mono text-indigo-300">{email}</span>
                 </div>
+                <div className="flex flex-col gap-1 border-t border-white/5 pt-3 mt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Last sync:</span>
+                    <span className="text-xs text-slate-300 font-mono">
+                      {appData.data.sync?.lastSyncAt ? format(new Date(appData.data.sync.lastSyncAt), "yyyy-MM-dd HH:mm") : 'Never'}
+                    </span>
+                  </div>
+                  {syncResult && (
+                    <div className="text-[10px] text-indigo-400 mt-1 mb-2">
+                      {syncResult}
+                    </div>
+                  )}
+                  <button
+                    onClick={triggerSync}
+                    disabled={isSyncing}
+                    className="w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-medium transition-colors mt-2"
+                  >
+                    {isSyncing ? "Syncing..." : "Sync now"}
+                  </button>
+                </div>
                 <button
                   onClick={signOut}
-                  disabled={loading}
+                  disabled={loading || isSyncing}
                   className="w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 rounded-lg text-sm font-medium transition-colors"
                 >
                   Sign Out

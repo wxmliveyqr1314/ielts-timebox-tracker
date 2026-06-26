@@ -7,6 +7,15 @@ const defaultState: AppState = {
   records: {},
 };
 
+export function getOrCreateDeviceId(): string {
+  let id = localStorage.getItem("ielts_timebox_device_id");
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("ielts_timebox_device_id", id);
+  }
+  return id;
+}
+
 const loadState = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -90,5 +99,10 @@ export function useAppData() {
     setAppState(prev => ({ ...prev, data: defaultState }));
   };
 
-  return { data, updateRecord, deleteRecord, importData, clearData };
+  const replaceData = (nextState: AppState) => {
+    setHasMutated(true);
+    setAppState(prev => ({ ...prev, data: nextState }));
+  };
+
+  return { data, updateRecord, deleteRecord, importData, clearData, replaceData };
 }
