@@ -139,6 +139,16 @@ export function SettingsPage({
     setIsSyncing(false);
   };
 
+  const getDisplaySyncResult = () => {
+    if (syncResult) return syncResult;
+    const lsr = appData.data.sync?.lastSyncResult;
+    if (!lsr) return "No recent sync result";
+    if (lsr.uploaded === 0 && lsr.downloaded === 0 && lsr.skipped === 0) {
+      return "Last successful sync: no changes.";
+    }
+    return `Last successful sync: uploaded ${lsr.uploaded}, downloaded ${lsr.downloaded}, skipped ${lsr.skipped}.`;
+  };
+
   const triggerSync = () => {
     if (!appData.data.sync?.lastSyncAt) {
       setShowFirstSyncConfirm(true);
@@ -327,7 +337,7 @@ export function SettingsPage({
                   <div className="flex flex-col gap-1 pt-2 border-t border-white/5">
                     <span className="text-xs text-slate-400">Last result</span>
                     <span className="text-[10px] text-indigo-400">
-                      {syncResult || "No recent sync result"}
+                      {getDisplaySyncResult()}
                     </span>
                   </div>
                 </div>

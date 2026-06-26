@@ -213,6 +213,12 @@ export async function syncDailyRecords({
     }
 
     mergedState.sync!.lastSyncAt = new Date().toISOString();
+    mergedState.sync!.lastSyncResult = {
+      uploaded,
+      downloaded,
+      skipped,
+      completedAt: mergedState.sync!.lastSyncAt
+    };
     return { mergedState, uploaded, downloaded, skipped, errors };
   } catch (err: any) {
     errors.push(err.message || 'Unknown sync error');
