@@ -100,5 +100,11 @@ export interface AppState {
     deviceId: string;
     deletedRecords?: Record<string, string>;
     lastSyncAt?: string;
+    lastSyncResult?: {
+      uploaded: number;
+      downloaded: number;
+      skipped: number;
+      completedAt: string;
+    };
   };
 }
