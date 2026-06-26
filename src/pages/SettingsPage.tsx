@@ -272,7 +272,7 @@ export function SettingsPage({
           </div>
         </div>
       )}
-      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-lg">
+      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-lg border border-white/5">
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
           Cloud Sync (Phase 1)
         </h2>
@@ -315,48 +315,48 @@ export function SettingsPage({
             ) : session ? (
               <div className="flex flex-col gap-3">
                 <div className="text-sm bg-black/20 p-4 rounded-xl border border-white/5 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400">Account</span>
-                    <span className="font-mono text-indigo-300 text-xs truncate max-w-[150px]">{email}</span>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs text-slate-400 shrink-0">Account</span>
+                    <span className="font-mono text-indigo-300 text-xs min-w-0 flex-1 truncate text-right">{email}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400">Local records</span>
-                    <span className="font-mono text-slate-300 text-xs">{Object.keys(appData.data.records || {}).length}</span>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs text-slate-400 shrink-0">Local records</span>
+                    <span className="font-mono text-slate-300 text-xs min-w-0 flex-1 truncate text-right">{Object.keys(appData.data.records || {}).length}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400">Device</span>
-                    <span className="font-mono text-slate-300 text-xs">{formatDeviceId(localStorage.getItem("ielts_timebox_device_id"))}</span>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs text-slate-400 shrink-0">Device</span>
+                    <span className="font-mono text-slate-300 text-xs min-w-0 flex-1 truncate text-right">{formatDeviceId(localStorage.getItem("ielts_timebox_device_id"))}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400">Mode</span>
-                    <span className="font-mono text-emerald-400 text-xs">Manual sync only</span>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs text-slate-400 shrink-0">Mode</span>
+                    <span className="font-mono text-emerald-400 text-xs min-w-0 flex-1 truncate text-right">Manual sync only</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400">Last sync</span>
-                    <span className="font-mono text-slate-300 text-xs">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs text-slate-400 shrink-0">Last sync</span>
+                    <span className="font-mono text-slate-300 text-xs min-w-0 flex-1 truncate text-right">
                       {appData.data.sync?.lastSyncAt ? format(new Date(appData.data.sync.lastSyncAt), "yyyy-MM-dd HH:mm") : 'Never'}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1 pt-2 border-t border-white/5">
                     <span className="text-xs text-slate-400">Last result</span>
-                    <span className="text-[10px] text-indigo-400">
+                    <span className="text-[10px] text-indigo-400 break-words leading-tight">
                       {getDisplaySyncResult()}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 mt-2">
+                <div className="flex flex-col sm:flex-row gap-2 mt-2">
                   <button
                     onClick={triggerSync}
                     disabled={isSyncing}
-                    className="w-full py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-bold transition-colors"
+                    className="flex-1 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-bold transition-colors"
                   >
                     {isSyncing ? "Syncing..." : "Sync now"}
                   </button>
                   <button
                     onClick={signOut}
                     disabled={loading || isSyncing}
-                    className="w-full py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 rounded-lg text-sm font-bold transition-colors"
+                    className="flex-1 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 rounded-lg text-sm font-bold transition-colors"
                   >
                     Sign Out
                   </button>
@@ -417,29 +417,38 @@ export function SettingsPage({
           <div className="flex justify-between items-center">
             <span className="font-bold text-sm">Health Status</span>
             {healthReport.ok ? (
-              <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-md">Healthy</span>
+              <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2.5 py-1 rounded-md">Healthy</span>
             ) : (
-              <span className="text-rose-400 text-xs font-bold bg-rose-400/10 px-2 py-1 rounded-md">Issues Found</span>
+              <span className="text-rose-400 text-xs font-bold bg-rose-400/10 px-2.5 py-1 rounded-md">Issues Found</span>
             )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">Total records: {healthReport.totalRecords}</span>
-            <span className="text-xs text-slate-400">Errors: {healthReport.errors}</span>
-            <span className="text-xs text-slate-400">Warnings: {healthReport.warnings}</span>
+          <div className="flex flex-col gap-1 p-3 bg-black/20 rounded-xl border border-white/5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-400">Total records</span>
+              <span className="font-mono text-xs text-slate-300">{healthReport.totalRecords}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-400">Errors</span>
+              <span className="font-mono text-xs text-rose-400">{healthReport.errors}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-400">Warnings</span>
+              <span className="font-mono text-xs text-amber-400">{healthReport.warnings}</span>
+            </div>
           </div>
 
           {healthReport.ok ? (
-            <div className="space-y-1">
-              <p className="text-xs text-slate-400">All local records look healthy.</p>
+            <div className="space-y-1 mt-2">
+              <p className="text-sm font-medium text-emerald-400">All local records look healthy.</p>
               <p className="text-[10px] text-slate-500 italic">This is a read-only check. No data was changed.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              <p className="text-[10px] text-amber-500/80 italic">This is a read-only check. Export a JSON backup before making manual changes.</p>
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+            <div className="space-y-3 mt-2">
+              <p className="text-[10px] text-amber-500/80 italic leading-tight">This is a read-only check. Export a JSON backup before making manual changes.</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {healthReport.issues.slice(0, 5).map((issue, idx) => (
-                  <div key={idx} className={`p-2 rounded border text-[10px] ${issue.severity === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-300' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
+                  <div key={idx} className={`p-2.5 rounded-lg border text-[10px] leading-relaxed break-words ${issue.severity === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-300' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
                     <span className="font-bold uppercase tracking-wider">{issue.severity}</span>: {issue.message}
                   </div>
                 ))}
@@ -457,8 +466,8 @@ export function SettingsPage({
           Local-First Backup
         </h2>
 
-        <div className="space-y-4">
-          <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex justify-between items-center">
+        <div className="space-y-3">
+          <div className="p-4 bg-black/20 rounded-xl border border-white/5 flex justify-between items-center gap-4">
             <div className="text-xs">
               <p className="font-bold text-white mb-0.5">Local JSON Export</p>
               <p className="text-slate-400">Save progress manually</p>
@@ -467,11 +476,11 @@ export function SettingsPage({
               onClick={handleExport}
               className="p-3 bg-white/10 hover:bg-white/20 transition-colors rounded-lg"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex justify-between items-center">
+          <div className="p-4 bg-black/20 rounded-xl border border-white/5 flex justify-between items-center gap-4">
             <div className="text-xs">
               <p className="font-bold text-white mb-0.5">Restore from JSON</p>
               <p className="text-slate-400">Overwrite current data</p>
@@ -487,11 +496,11 @@ export function SettingsPage({
               onClick={() => fileInputRef.current?.click()}
               className="p-3 bg-white/10 hover:bg-white/20 transition-colors rounded-lg"
             >
-              <Upload className="w-5 h-5" />
+              <Upload className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20 flex justify-between items-center">
+          <div className="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20 flex justify-between items-center gap-4">
             <div className="text-xs">
               <p className="font-bold text-rose-500 mb-0.5">Clear All Data</p>
               <p className="text-rose-500/70">Irreversible action</p>
@@ -500,7 +509,7 @@ export function SettingsPage({
               onClick={handleClear}
               className="p-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 transition-colors rounded-lg"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
 
@@ -509,7 +518,7 @@ export function SettingsPage({
             cookies, no trackers.
           </p>
 
-          <div className="mt-8 pt-4 border-t border-slate-700/50 text-center text-[10px] text-slate-500 font-mono flex flex-col gap-1">
+          <div className="mt-10 pt-6 border-t border-slate-700/50 text-center text-[10px] text-slate-500 font-mono flex flex-col gap-1.5 break-all px-4">
             <p>
               v{APP_VERSION} • {BUILD_COMMIT}
             </p>
