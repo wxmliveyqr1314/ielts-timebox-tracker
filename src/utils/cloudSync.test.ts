@@ -148,12 +148,32 @@ describe('mergeLocalAndCloudRecords', () => {
         date_key: '2026-05-19',
         updated_at: '2026-05-19T12:00:00Z',
         deleted_at: '2026-05-19T12:00:00Z',
-        record_json: {}
+        record_json: createDummyRecord('2026-05-19', '2026-05-19T12:00:00Z') // Even if there is json payload, it should be treated as deleted
       }
     ];
     const { downloaded, mergedState } = mergeLocalAndCloudRecords(localState, cloudRecords, deviceId);
     expect(downloaded).toBe(1);
     expect(mergedState.records['2026-05-19']).toBeUndefined();
+    expect(mergedState.sync?.deletedRecords?.['2026-05-19']).toBe('2026-05-19T12:00:00Z');
+  });
+
+  it('does not download cloud tombstone as a normal record if cloud updated_at > local.updatedAt', () => {
+    const localState: AppState = {
+      records: {
+        '2026-05-19': createDummyRecord('2026-05-19', '2026-05-19T10:00:00Z'),
+      }
+    };
+    const cloudRecords = [
+      {
+        date_key: '2026-05-19',
+        updated_at: '2026-05-19T14:00:00Z',
+        deleted_at: '2026-05-19T12:00:00Z', // tombstone but for some reason updated_at is even newer
+        record_json: createDummyRecord('2026-05-19', '2026-05-19T14:00:00Z')
+      }
+    ];
+    const { downloaded, mergedState } = mergeLocalAndCloudRecords(localState, cloudRecords, deviceId);
+    expect(downloaded).toBe(1);
+    expect(mergedState.records['2026-05-19']).toBeUndefined(); // MUST NOT exist as normal record
     expect(mergedState.sync?.deletedRecords?.['2026-05-19']).toBe('2026-05-19T12:00:00Z');
   });
 

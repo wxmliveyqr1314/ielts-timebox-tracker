@@ -61,21 +61,29 @@ export function mergeLocalAndCloudRecords(
 
     if (cloudRec) {
       const cloudTime = new Date(cloudRec.updated_at).getTime();
-      const cloudDeletedTime = cloudRec.deleted_at ? new Date(cloudRec.deleted_at).getTime() : 0;
       
-      if (cloudDeletedTime > localTime) {
-        delete mergedState.records[dateKey];
-        localDeleted[dateKey] = cloudRec.deleted_at;
-        downloaded++;
-      } else if (localTime > cloudTime && localTime > cloudDeletedTime) {
-        recordsToUpload.push({ date_key: dateKey, record_json: localRec, updated_at: localRec.updatedAt });
-        uploaded++;
-      } else if (cloudTime > localTime) {
-        mergedState.records[dateKey] = cloudRec.record_json;
-        delete localDeleted[dateKey];
-        downloaded++;
+      if (cloudRec.deleted_at) {
+        if (cloudTime > localTime) {
+          delete mergedState.records[dateKey];
+          localDeleted[dateKey] = cloudRec.deleted_at;
+          downloaded++;
+        } else if (localTime > cloudTime) {
+          recordsToUpload.push({ date_key: dateKey, record_json: localRec, updated_at: localRec.updatedAt });
+          uploaded++;
+        } else {
+          skipped++;
+        }
       } else {
-        skipped++;
+        if (localTime > cloudTime) {
+          recordsToUpload.push({ date_key: dateKey, record_json: localRec, updated_at: localRec.updatedAt });
+          uploaded++;
+        } else if (cloudTime > localTime) {
+          mergedState.records[dateKey] = cloudRec.record_json;
+          delete localDeleted[dateKey];
+          downloaded++;
+        } else {
+          skipped++;
+        }
       }
     } else {
       recordsToUpload.push({ date_key: dateKey, record_json: localRec, updated_at: localRec.updatedAt });
@@ -92,20 +100,28 @@ export function mergeLocalAndCloudRecords(
 
     if (cloudRec) {
       const cloudTime = new Date(cloudRec.updated_at).getTime();
-      const cloudDeletedTime = cloudRec.deleted_at ? new Date(cloudRec.deleted_at).getTime() : 0;
-
-      if (localDeletedTime > cloudTime && localDeletedTime > cloudDeletedTime) {
-        recordsToUpload.push({ date_key: dateKey, record_json: {}, updated_at: deletedAt, deleted_at: deletedAt });
-        uploaded++;
-      } else if (cloudTime > localDeletedTime && cloudDeletedTime === 0) {
-        mergedState.records[dateKey] = cloudRec.record_json;
-        delete localDeleted[dateKey];
-        downloaded++;
-      } else if (cloudDeletedTime > localDeletedTime) {
-        localDeleted[dateKey] = cloudRec.deleted_at;
-        downloaded++;
+      
+      if (cloudRec.deleted_at) {
+        if (localDeletedTime > cloudTime) {
+          recordsToUpload.push({ date_key: dateKey, record_json: {}, updated_at: deletedAt, deleted_at: deletedAt });
+          uploaded++;
+        } else if (cloudTime > localDeletedTime) {
+          localDeleted[dateKey] = cloudRec.deleted_at;
+          downloaded++;
+        } else {
+          skipped++;
+        }
       } else {
-        skipped++;
+        if (localDeletedTime > cloudTime) {
+          recordsToUpload.push({ date_key: dateKey, record_json: {}, updated_at: deletedAt, deleted_at: deletedAt });
+          uploaded++;
+        } else if (cloudTime > localDeletedTime) {
+          mergedState.records[dateKey] = cloudRec.record_json;
+          delete localDeleted[dateKey];
+          downloaded++;
+        } else {
+          skipped++;
+        }
       }
       cloudMap.delete(dateKey);
     } else {
@@ -145,13 +161,13 @@ export async function syncDailyRecords({
   errors: string[];
 }> {
   const errors: string[] = [];
-  
+
   try {
     const { data: cloudRecords, error: fetchError } = await supabase
       .from('daily_records')
       .select('*')
       .eq('user_id', userId);
-      
+
     if (fetchError) {
       errors.push(`Fetch error: ${fetchError.message}`);
       return { mergedState: localState, uploaded: 0, downloaded: 0, skipped: 0, errors };
