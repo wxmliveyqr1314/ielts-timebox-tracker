@@ -3,7 +3,7 @@ import { AppState, DailyRecord } from "../types";
 import { formatDateStr, sortRecordsByDateDesc } from "../utils/date";
 import { cn } from "../lib/utils";
 import { 
-  CheckCircle2, ChevronDown, ChevronUp, Calendar
+  CheckCircle2, ChevronDown, ChevronUp, Calendar, Trash2
 } from "lucide-react";
 import { 
   calculateColorStatus, isMomoTask, isMainTaskForDay, isSpeakingTask 
@@ -40,6 +40,13 @@ export function HistoryPage({ appData }: { appData: any }) {
   );
 
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+
+  const handleDelete = (date: string) => {
+    appData.deleteRecord(date);
+    setDeleteMessage("Record deleted locally. Tap Sync now in Settings to update cloud backup.");
+    setTimeout(() => setDeleteMessage(null), 5000);
+  };
 
   const last7Days = records.slice(0, 7);
   const greenDays = last7Days.filter(r => r.status === "green").length;
@@ -84,6 +91,12 @@ export function HistoryPage({ appData }: { appData: any }) {
       </div>
 
       <div className="space-y-4">
+        {deleteMessage && (
+          <div className="p-3 bg-slate-800 text-white text-xs rounded-xl flex items-center justify-between">
+            <span>{deleteMessage}</span>
+            <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white">×</button>
+          </div>
+        )}
         {records.length === 0 && (
           <div className="text-center py-10 text-slate-400 text-sm">No history records found.</div>
         )}
@@ -126,7 +139,7 @@ export function HistoryPage({ appData }: { appData: any }) {
 
               {isExpanded && (
                 <div className="border-t border-slate-100 p-4 bg-slate-50/50">
-                  <RecordDetail record={record} updateRecord={appData.updateRecord} />
+                  <RecordDetail record={record} updateRecord={appData.updateRecord} deleteRecord={handleDelete} />
                 </div>
               )}
             </div>
@@ -137,7 +150,9 @@ export function HistoryPage({ appData }: { appData: any }) {
   );
 }
 
-function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRecord: any }) {
+function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRecord, updateRecord: any, deleteRecord: (date: string) => void }) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleTaskUpdate = (taskId: string, field: "actualMinutes" | "completed" | "notes", value: any) => {
     updateRecord(record.date, (prev: DailyRecord) => {
       const newTasks = prev.tasks.map(t => {
@@ -271,6 +286,45 @@ function RecordDetail({ record, updateRecord }: { record: DailyRecord, updateRec
             onChange={(e) => handleRecordUpdate("bedtime", e.target.value)}
           />
         </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-4 flex justify-end">
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-xs text-rose-400 hover:text-rose-600 flex items-center gap-1 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete Record
+          </button>
+        ) : (
+          <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 w-full">
+            <h4 className="text-xs font-bold text-rose-700 mb-1 flex items-center gap-1">
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Record?
+            </h4>
+            <p className="text-[10px] text-rose-600 mb-3">
+              This will delete your local record. If you use cloud sync, the deletion will be synced to the cloud on your next 'Sync now'. Consider exporting a JSON backup in Settings first.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-2 bg-white text-slate-600 border border-slate-200 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  deleteRecord(record.date);
+                  setShowDeleteConfirm(false);
+                }}
+                className="flex-1 py-2 bg-rose-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-rose-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
