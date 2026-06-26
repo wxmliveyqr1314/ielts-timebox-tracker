@@ -81,9 +81,13 @@ export function useAppData() {
       const newRecords = { ...prev.data.records };
       delete newRecords[date];
 
+      const norm = normalizeDateString(date);
+      if (norm && norm !== date) {
+        delete newRecords[norm];
+      }
+
       const newData = { ...prev.data, records: newRecords };
 
-      const norm = normalizeDateString(date);
       if (norm) {
         if (!newData.sync) {
           newData.sync = { schemaVersion: 1, deviceId: getOrCreateDeviceId(), deletedRecords: {} };
