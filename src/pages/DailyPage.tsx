@@ -19,6 +19,7 @@ import {
   RotateCcw,
   Settings2,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { subDays, format } from "date-fns";
@@ -29,30 +30,43 @@ interface DailyPageProps {
 }
 
 export function DailyPage({ appData }: DailyPageProps) {
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const today = getTodayStr();
   const record: DailyRecord | undefined = appData.data.records[today];
   const yesterdayStr = format(subDays(new Date(), 1), "yyyy-MM-dd");
   const yesterdayRecord = appData.data.records[yesterdayStr];
 
-  if (!record) {
-    return (
-      <SetupDaily
-        today={today}
-        updateRecord={appData.updateRecord}
-        yesterdayRecord={yesterdayRecord}
-        records={appData.data.records}
-      />
-    );
-  }
+  const handleDelete = (date: string) => {
+    appData.deleteRecord(date);
+    setDeleteMessage("Record deleted locally. Tap Sync now in Settings to update cloud backup.");
+    setTimeout(() => setDeleteMessage(null), 5000);
+  };
 
   return (
-    <TrackerDaily
-      today={today}
-      record={record}
-      updateRecord={appData.updateRecord}
-      deleteRecord={appData.deleteRecord}
-      yesterdayRecord={yesterdayRecord}
-    />
+    <div className="space-y-4">
+      {deleteMessage && (
+        <div className="p-3 bg-slate-800 text-white text-xs rounded-xl flex items-center justify-between">
+          <span>{deleteMessage}</span>
+          <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white">×</button>
+        </div>
+      )}
+      {!record ? (
+        <SetupDaily
+          today={today}
+          updateRecord={appData.updateRecord}
+          yesterdayRecord={yesterdayRecord}
+          records={appData.data.records}
+        />
+      ) : (
+        <TrackerDaily
+          today={today}
+          record={record}
+          updateRecord={appData.updateRecord}
+          deleteRecord={handleDelete}
+          yesterdayRecord={yesterdayRecord}
+        />
+      )}
+    </div>
   );
 }
 
@@ -408,6 +422,7 @@ function TrackerDaily({
 }) {
   const [showConfig, setShowConfig] = useState(false);
   const [showConfirmRegenerate, setShowConfirmRegenerate] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Local config state for "what if" changes
   const [localConfig, setLocalConfig] = useState({
@@ -742,6 +757,50 @@ function TrackerDaily({
           ))}
         </div>
       </div>
+      {/* Delete Record Section */}
+      <div className="p-5 border-t border-slate-100 flex justify-end">
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="text-xs text-rose-300 hover:text-rose-500 flex items-center gap-1 transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          Delete Today Record
+        </button>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="absolute inset-0 z-50 bg-slate-900/50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-rose-500" />
+              Delete Record?
+            </h3>
+            <div className="text-sm text-slate-500 mb-6 space-y-2">
+              <p>This will delete your local record for today.</p>
+              <p>If you use cloud sync, the deletion will be synced to the cloud on your next 'Sync now'.</p>
+              <p>Consider exporting a JSON backup in Settings first.</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  deleteRecord(today);
+                  setShowDeleteConfirm(false);
+                }}
+                className="flex-1 py-3 bg-rose-600 text-white font-bold rounded-xl shadow-lg shadow-rose-200 hover:bg-rose-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
