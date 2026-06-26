@@ -423,11 +423,20 @@ export function SettingsPage({
             )}
           </div>
 
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">Total records: {healthReport.totalRecords}</span>
+            <span className="text-xs text-slate-400">Errors: {healthReport.errors}</span>
+            <span className="text-xs text-slate-400">Warnings: {healthReport.warnings}</span>
+          </div>
+
           {healthReport.ok ? (
-            <p className="text-xs text-slate-400">All local records look healthy.</p>
+            <div className="space-y-1">
+              <p className="text-xs text-slate-400">All local records look healthy.</p>
+              <p className="text-[10px] text-slate-500 italic">This is a read-only check. No data was changed.</p>
+            </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs text-amber-400">{healthReport.errors} errors, {healthReport.warnings} warnings</p>
+              <p className="text-[10px] text-amber-500/80 italic">This is a read-only check. Export a JSON backup before making manual changes.</p>
               <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                 {healthReport.issues.slice(0, 5).map((issue, idx) => (
                   <div key={idx} className={`p-2 rounded border text-[10px] ${issue.severity === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-300' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
