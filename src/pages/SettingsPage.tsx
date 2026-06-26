@@ -36,8 +36,16 @@ export function SettingsPage({
   const { session, email, loading, configured, error, sendMagicLink, verifyEmailOtp, signOut } = useSupabaseAuth();
   const [authEmail, setAuthEmail] = useState("");
   const [authOtp, setAuthOtp] = useState("");
-  const [authMessage, setAuthMessage] = useState<string | null>(null);
+  const [authNotice, setAuthNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [cooldown, setCooldown] = useState(0);
+
+  const formatAuthError = (err: any) => {
+    const msg = err?.message || "";
+    if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('too many requests')) {
+      return 'Too many login emails sent. Please wait a few minutes, then try again.';
+    }
+    return `Login failed. Please try again. (${msg})`;
+  };
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -51,13 +59,9 @@ export function SettingsPage({
     if (!authEmail) return;
     const { error } = await sendMagicLink(authEmail);
     if (error) {
-      if (error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('too many requests')) {
-        setAuthMessage('Too many login emails sent. Please wait a few minutes, then try again.');
-      } else {
-        setAuthMessage(`Login failed. Please try again. (${error.message})`);
-      }
+      setAuthNotice({ type: "error", message: formatAuthError(error) });
     } else {
-      setAuthMessage("Magic link sent! Check your email.");
+      setAuthNotice({ type: "success", message: "Magic link sent! Check your email." });
       setCooldown(60);
     }
   };
@@ -65,14 +69,14 @@ export function SettingsPage({
   const handleVerifyOtp = async () => {
     if (!authEmail) return;
     if (!authOtp || authOtp.length !== 6 || !/^\d+$/.test(authOtp)) {
-      setAuthMessage("Please enter the 6-digit code from your email.");
+      setAuthNotice({ type: "error", message: "Please enter the 6-digit code from your email." });
       return;
     }
     const { error } = await verifyEmailOtp(authEmail, authOtp);
     if (error) {
-      setAuthMessage(`Login failed. Please try again. (${error.message})`);
+      setAuthNotice({ type: "error", message: formatAuthError(error) });
     } else {
-      setAuthMessage(null);
+      setAuthNotice(null);
       setAuthOtp("");
       setAuthEmail("");
       setCooldown(0);
@@ -255,14 +259,18 @@ export function SettingsPage({
         </h2>
 
         <div className="space-y-4 mb-8">
-          {error && (
+          {session && error && (
             <div className="p-3 bg-rose-500/10 text-rose-500 text-xs rounded-xl border border-rose-500/20">
               {error}
             </div>
           )}
-          {authMessage && (
-            <div className="p-3 bg-emerald-500/10 text-emerald-500 text-xs rounded-xl border border-emerald-500/20">
-              {authMessage}
+          {authNotice && (
+            <div className={`p-3 text-xs rounded-xl border ${
+              authNotice.type === 'success'
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+            }`}>
+              {authNotice.message}
             </div>
           )}
 
@@ -346,7 +354,10 @@ export function SettingsPage({
                     maxLength={6}
                     placeholder="6-digit code (if you didn't click the link)"
                     value={authOtp}
-                    onChange={(e) => setAuthOtp(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setAuthOtp(val);
+                    }}
                     className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-center tracking-widest"
                   />
                 </div>

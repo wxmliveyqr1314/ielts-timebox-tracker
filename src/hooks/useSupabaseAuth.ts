@@ -54,6 +54,7 @@ export function useSupabaseAuth() {
       setError(error.message);
       return { error };
     }
+    setError(null);
     return { error: null };
   };
 
@@ -74,6 +75,7 @@ export function useSupabaseAuth() {
       setError(error.message);
       return { error };
     }
+    setError(null);
     return { data, error: null };
   };
 
@@ -81,7 +83,11 @@ export function useSupabaseAuth() {
     if (!isSupabaseConfigured || !supabase) return;
     setLoading(true);
     const { error } = await supabase.auth.signOut();
-    if (error) setError(error.message);
+    if (error) {
+      setError(error.message);
+    } else {
+      setError(null);
+    }
     setLoading(false);
   };
 
