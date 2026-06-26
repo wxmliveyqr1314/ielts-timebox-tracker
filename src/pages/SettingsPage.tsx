@@ -1,4 +1,4 @@
-import { useRef, ChangeEvent, useState } from "react";
+import { useRef, ChangeEvent, useState, useEffect } from "react";
 import { AppState } from "../types";
 import { Download, Upload, Trash2, Cloud, Mail } from "lucide-react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from "../utils/version";
@@ -33,18 +33,49 @@ export function SettingsPage({
     URL.revokeObjectURL(url);
   };
 
-  const { session, email, loading, configured, error, sendMagicLink, signOut } = useSupabaseAuth();
+  const { session, email, loading, configured, error, sendMagicLink, verifyEmailOtp, signOut } = useSupabaseAuth();
   const [authEmail, setAuthEmail] = useState("");
+  const [authOtp, setAuthOtp] = useState("");
   const [authMessage, setAuthMessage] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((c) => c - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleMagicLink = async () => {
     if (!authEmail) return;
     const { error } = await sendMagicLink(authEmail);
     if (error) {
-      setAuthMessage(`Error: ${error.message}`);
+      if (error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('too many requests')) {
+        setAuthMessage('Too many login emails sent. Please wait a few minutes, then try again.');
+      } else {
+        setAuthMessage(`Login failed. Please try again. (${error.message})`);
+      }
     } else {
       setAuthMessage("Magic link sent! Check your email.");
+      setCooldown(60);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!authEmail) return;
+    if (!authOtp || authOtp.length !== 6 || !/^\d+$/.test(authOtp)) {
+      setAuthMessage("Please enter the 6-digit code from your email.");
+      return;
+    }
+    const { error } = await verifyEmailOtp(authEmail, authOtp);
+    if (error) {
+      setAuthMessage(`Login failed. Please try again. (${error.message})`);
+    } else {
+      setAuthMessage(null);
+      setAuthOtp("");
       setAuthEmail("");
+      setCooldown(0);
     }
   };
 
@@ -301,10 +332,30 @@ export function SettingsPage({
                 </div>
                 <button
                   onClick={handleMagicLink}
-                  disabled={loading || !authEmail}
+                  disabled={loading || !authEmail || cooldown > 0}
                   className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
                 >
-                  {loading ? "Sending..." : "Send Magic Link"}
+                  {loading ? "Sending..." : cooldown > 0 ? `Send again in ${cooldown}s` : "Send Magic Link"}
+                </button>
+
+                <div className="border-t border-white/5 my-1" />
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="6-digit code (if you didn't click the link)"
+                    value={authOtp}
+                    onChange={(e) => setAuthOtp(e.target.value)}
+                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-center tracking-widest"
+                  />
+                </div>
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={loading || !authEmail || authOtp.length !== 6}
+                  className="w-full py-2 bg-emerald-600/80 hover:bg-emerald-500/80 disabled:opacity-50 disabled:hover:bg-emerald-600/80 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  {loading ? "Verifying..." : "Verify Code"}
                 </button>
               </div>
             )}
