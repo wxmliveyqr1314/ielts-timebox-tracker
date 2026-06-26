@@ -8,6 +8,12 @@ import { syncDailyRecords } from "../utils/cloudSync";
 import { supabase } from "../utils/supabaseClient";
 import { getOrCreateDeviceId } from "../hooks/useAppData";
 
+function formatDeviceId(id: string | null) {
+  if (!id) return "Not prepared yet";
+  if (id.length <= 10) return id;
+  return `${id.slice(0, 6)}...${id.slice(-4)}`;
+}
+
 export function SettingsPage({
   appData,
 }: {
@@ -295,36 +301,53 @@ export function SettingsPage({
               </div>
             ) : session ? (
               <div className="flex flex-col gap-3">
-                <div className="text-sm bg-black/20 p-3 rounded-lg border border-white/5">
-                  Account: <span className="font-mono text-indigo-300">{email}</span>
-                </div>
-                <div className="flex flex-col gap-1 border-t border-white/5 pt-3 mt-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-400">Last sync:</span>
-                    <span className="text-xs text-slate-300 font-mono">
+                <div className="text-sm bg-black/20 p-4 rounded-xl border border-white/5 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Account</span>
+                    <span className="font-mono text-indigo-300 text-xs truncate max-w-[150px]">{email}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Local records</span>
+                    <span className="font-mono text-slate-300 text-xs">{Object.keys(appData.data.records || {}).length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Device</span>
+                    <span className="font-mono text-slate-300 text-xs">{formatDeviceId(localStorage.getItem("ielts_timebox_device_id"))}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Mode</span>
+                    <span className="font-mono text-emerald-400 text-xs">Manual sync only</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Last sync</span>
+                    <span className="font-mono text-slate-300 text-xs">
                       {appData.data.sync?.lastSyncAt ? format(new Date(appData.data.sync.lastSyncAt), "yyyy-MM-dd HH:mm") : 'Never'}
                     </span>
                   </div>
-                  {syncResult && (
-                    <div className="text-[10px] text-indigo-400 mt-1 mb-2">
-                      {syncResult}
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-1 pt-2 border-t border-white/5">
+                    <span className="text-xs text-slate-400">Last result</span>
+                    <span className="text-[10px] text-indigo-400">
+                      {syncResult || "No recent sync result"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 mt-2">
                   <button
                     onClick={triggerSync}
                     disabled={isSyncing}
-                    className="w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-medium transition-colors mt-2"
+                    className="w-full py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-bold transition-colors"
                   >
                     {isSyncing ? "Syncing..." : "Sync now"}
                   </button>
+                  <button
+                    onClick={signOut}
+                    disabled={loading || isSyncing}
+                    className="w-full py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 rounded-lg text-sm font-bold transition-colors"
+                  >
+                    Sign Out
+                  </button>
                 </div>
-                <button
-                  onClick={signOut}
-                  disabled={loading || isSyncing}
-                  className="w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Sign Out
-                </button>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
