@@ -54,14 +54,40 @@ export function useSupabaseAuth() {
       setError(error.message);
       return { error };
     }
+    setError(null);
     return { error: null };
+  };
+
+  const verifyEmailOtp = async (email: string, token: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: new Error('Supabase is not configured.') };
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email'
+    });
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+      return { error };
+    }
+    setError(null);
+    return { data, error: null };
   };
 
   const signOut = async () => {
     if (!isSupabaseConfigured || !supabase) return;
     setLoading(true);
     const { error } = await supabase.auth.signOut();
-    if (error) setError(error.message);
+    if (error) {
+      setError(error.message);
+    } else {
+      setError(null);
+    }
     setLoading(false);
   };
 
@@ -73,6 +99,7 @@ export function useSupabaseAuth() {
     configured: isSupabaseConfigured,
     error,
     sendMagicLink,
+    verifyEmailOtp,
     signOut,
   };
 }
