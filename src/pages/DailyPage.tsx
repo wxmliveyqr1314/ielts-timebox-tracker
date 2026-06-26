@@ -36,10 +36,16 @@ export function DailyPage({ appData }: DailyPageProps) {
   const yesterdayStr = format(subDays(new Date(), 1), "yyyy-MM-dd");
   const yesterdayRecord = appData.data.records[yesterdayStr];
 
+  useEffect(() => {
+    if (deleteMessage) {
+      const timer = setTimeout(() => setDeleteMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [deleteMessage]);
+
   const handleDelete = (date: string) => {
     appData.deleteRecord(date);
     setDeleteMessage("Record deleted locally. Tap Sync now in Settings to update cloud backup.");
-    setTimeout(() => setDeleteMessage(null), 5000);
   };
 
   return (
@@ -583,7 +589,7 @@ function TrackerDaily({
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
       {/* Regeneration Confirmation Modal */}
       {showConfirmRegenerate && (
-        <div className="absolute inset-0 z-50 bg-slate-900/50 flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 flex flex-col items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -770,7 +776,7 @@ function TrackerDaily({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="absolute inset-0 z-50 bg-slate-900/50 flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 flex flex-col items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
               <Trash2 className="w-5 h-5 text-rose-500" />

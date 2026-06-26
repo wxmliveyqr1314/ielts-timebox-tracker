@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppState, DailyRecord } from "../types";
 import { formatDateStr, sortRecordsByDateDesc } from "../utils/date";
 import { cn } from "../lib/utils";
@@ -42,10 +42,16 @@ export function HistoryPage({ appData }: { appData: any }) {
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (deleteMessage) {
+      const timer = setTimeout(() => setDeleteMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [deleteMessage]);
+
   const handleDelete = (date: string) => {
     appData.deleteRecord(date);
     setDeleteMessage("Record deleted locally. Tap Sync now in Settings to update cloud backup.");
-    setTimeout(() => setDeleteMessage(null), 5000);
   };
 
   const last7Days = records.slice(0, 7);
