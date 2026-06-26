@@ -108,3 +108,20 @@ export interface AppState {
     };
   };
 }
+
+export type DataHealthIssueSeverity = "warning" | "error";
+
+export interface DataHealthIssue {
+  severity: DataHealthIssueSeverity;
+  code: string;
+  message: string;
+  date?: string;
+}
+
+export interface DataHealthReport {
+  ok: boolean;
+  totalRecords: number;
+  errors: number;
+  warnings: number;
+  issues: DataHealthIssue[];
+}

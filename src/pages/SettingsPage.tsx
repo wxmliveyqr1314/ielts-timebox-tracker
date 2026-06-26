@@ -1,4 +1,4 @@
-import { useRef, ChangeEvent, useState, useEffect } from "react";
+import { useRef, ChangeEvent, useState, useEffect, useMemo } from "react";
 import { AppState } from "../types";
 import { Download, Upload, Trash2, Cloud, Mail } from "lucide-react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from "../utils/version";
@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { syncDailyRecords } from "../utils/cloudSync";
 import { supabase } from "../utils/supabaseClient";
 import { getOrCreateDeviceId } from "../hooks/useAppData";
+import { analyzeAppDataHealth } from "../utils/dataHealth";
 
 function formatDeviceId(id: string | null) {
   if (!id) return "Not prepared yet";
@@ -51,6 +52,8 @@ export function SettingsPage({
   const [authOtp, setAuthOtp] = useState("");
   const [authNotice, setAuthNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [cooldown, setCooldown] = useState(0);
+
+  const healthReport = useMemo(() => analyzeAppDataHealth(appData.data), [appData.data]);
 
   const formatAuthError = (err: any) => {
     const msg = err?.message || "";
@@ -406,7 +409,42 @@ export function SettingsPage({
           </div>
         </div>
 
-        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 mt-8">
+          Data Health
+        </h2>
+
+        <div className="p-4 bg-slate-900 rounded-2xl text-white shadow-lg border border-white/5 space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-sm">Health Status</span>
+            {healthReport.ok ? (
+              <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-md">Healthy</span>
+            ) : (
+              <span className="text-rose-400 text-xs font-bold bg-rose-400/10 px-2 py-1 rounded-md">Issues Found</span>
+            )}
+          </div>
+
+          {healthReport.ok ? (
+            <p className="text-xs text-slate-400">All local records look healthy.</p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-amber-400">{healthReport.errors} errors, {healthReport.warnings} warnings</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                {healthReport.issues.slice(0, 5).map((issue, idx) => (
+                  <div key={idx} className={`p-2 rounded border text-[10px] ${issue.severity === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-300' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
+                    <span className="font-bold uppercase tracking-wider">{issue.severity}</span>: {issue.message}
+                  </div>
+                ))}
+                {healthReport.issues.length > 5 && (
+                  <div className="text-[10px] text-slate-500 italic pl-1">
+                    +{healthReport.issues.length - 5} more issues
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 mt-8">
           Local-First Backup
         </h2>
 
