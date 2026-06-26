@@ -228,4 +228,38 @@ describe('mergeLocalAndCloudRecords', () => {
     mergeLocalAndCloudRecords(localState, [], deviceId);
     expect(localState).toEqual(localStateCopy);
   });
+
+  it('skips invalid cloud date_key and invalid record_json', () => {
+    const localState: AppState = { records: {} };
+    const cloudRecords = [
+      {
+        date_key: 'invalid-date',
+        updated_at: '2026-05-19T10:00:00Z',
+        record_json: createDummyRecord('2026-05-19', '2026-05-19T10:00:00Z')
+      },
+      {
+        date_key: '2026-05-20',
+        updated_at: '2026-05-20T10:00:00Z',
+        record_json: "not an object"
+      }
+    ];
+    const { downloaded, mergedState } = mergeLocalAndCloudRecords(localState, cloudRecords, deviceId);
+    expect(downloaded).toBe(0);
+    expect(Object.keys(mergedState.records).length).toBe(0);
+  });
+
+  it('overwrites record_json.date with normalized date_key if they differ', () => {
+    const localState: AppState = { records: {} };
+    const cloudRecords = [
+      {
+        date_key: '2026-5-19', // will be normalized to 2026-05-19
+        updated_at: '2026-05-19T10:00:00Z',
+        record_json: createDummyRecord('2026-05-18', '2026-05-19T10:00:00Z') // completely different date
+      }
+    ];
+    const { downloaded, mergedState } = mergeLocalAndCloudRecords(localState, cloudRecords, deviceId);
+    expect(downloaded).toBe(1);
+    expect(mergedState.records['2026-05-19']).toBeDefined();
+    expect(mergedState.records['2026-05-19'].date).toBe('2026-05-19'); // overwritten by date_key
+  });
 });

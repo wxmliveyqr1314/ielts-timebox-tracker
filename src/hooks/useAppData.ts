@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AppState, DailyRecord } from "../types";
+import { normalizeDateString } from "../utils/date";
 
 const STORAGE_KEY = "ielts_timebox_state_v2";
 
@@ -79,12 +80,27 @@ export function useAppData() {
     setAppState((prev) => {
       const newRecords = { ...prev.data.records };
       delete newRecords[date];
+
+      const norm = normalizeDateString(date);
+      if (norm && norm !== date) {
+        delete newRecords[norm];
+      }
+
+      const newData = { ...prev.data, records: newRecords };
+
+      if (norm) {
+        if (!newData.sync) {
+          newData.sync = { schemaVersion: 1, deviceId: getOrCreateDeviceId(), deletedRecords: {} };
+        }
+        if (!newData.sync.deletedRecords) {
+          newData.sync.deletedRecords = {};
+        }
+        newData.sync.deletedRecords[norm] = new Date().toISOString();
+      }
+
       return {
         ...prev,
-        data: {
-          ...prev.data,
-          records: newRecords,
-        }
+        data: newData
       };
     });
   };
