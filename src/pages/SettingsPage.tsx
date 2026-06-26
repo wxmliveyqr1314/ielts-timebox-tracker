@@ -6,6 +6,7 @@ import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { format } from "date-fns";
 import { syncDailyRecords } from "../utils/cloudSync";
 import { supabase } from "../utils/supabaseClient";
+import { getOrCreateDeviceId } from "../hooks/useAppData";
 
 export function SettingsPage({
   appData,
@@ -54,8 +55,15 @@ export function SettingsPage({
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const handleSync = async () => {
-    const deviceId = localStorage.getItem("ielts_timebox_device_id");
-    if (!session?.user?.id || !supabase || !deviceId) return;
+    let deviceId: string;
+    try {
+      deviceId = getOrCreateDeviceId();
+    } catch (e) {
+      setSyncResult(`Error: Could not generate device ID`);
+      return;
+    }
+
+    if (!session?.user?.id || !supabase) return;
 
     setIsSyncing(true);
     setSyncResult(null);

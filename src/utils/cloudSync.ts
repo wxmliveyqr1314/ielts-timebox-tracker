@@ -18,12 +18,17 @@ export function mergeLocalAndCloudRecords(
   if (!mergedState.sync) {
     mergedState.sync = { schemaVersion: 1, deviceId };
   }
+  if (!mergedState.sync.deletedRecords) {
+    mergedState.sync.deletedRecords = {};
+  }
   
   // ensure valid date keys
   const newRecords: Record<string, DailyRecord> = {};
   for (const [k, v] of Object.entries(mergedState.records || {})) {
-    const norm = normalizeDateString(k);
+    const targetDateStr = v.date || k; // fallback to k
+    const norm = normalizeDateString(targetDateStr);
     if (norm) {
+      v.date = norm;
       if (newRecords[norm]) {
         const time1 = new Date(v.updatedAt).getTime();
         const time2 = new Date(newRecords[norm].updatedAt).getTime();
@@ -46,35 +51,77 @@ export function mergeLocalAndCloudRecords(
   let downloaded = 0;
   let skipped = 0;
   const recordsToUpload: any[] = [];
+  const localDeleted = mergedState.sync.deletedRecords;
+  const processedDates = new Set<string>();
 
   for (const [dateKey, localRec] of Object.entries(mergedState.records)) {
+    processedDates.add(dateKey);
     const cloudRec = cloudMap.get(dateKey);
-    if (!cloudRec) {
-      // local exists, cloud doesn't -> upload
-      recordsToUpload.push({ date_key: dateKey, record_json: localRec, updated_at: localRec.updatedAt });
-      uploaded++;
-    } else {
-      // both exist
-      const localTime = new Date(localRec.updatedAt).getTime();
+    const localTime = new Date(localRec.updatedAt).getTime();
+
+    if (cloudRec) {
       const cloudTime = new Date(cloudRec.updated_at).getTime();
+      const cloudDeletedTime = cloudRec.deleted_at ? new Date(cloudRec.deleted_at).getTime() : 0;
       
-      if (localTime > cloudTime) {
+      if (cloudDeletedTime > localTime) {
+        delete mergedState.records[dateKey];
+        localDeleted[dateKey] = cloudRec.deleted_at;
+        downloaded++;
+      } else if (localTime > cloudTime && localTime > cloudDeletedTime) {
         recordsToUpload.push({ date_key: dateKey, record_json: localRec, updated_at: localRec.updatedAt });
         uploaded++;
       } else if (cloudTime > localTime) {
         mergedState.records[dateKey] = cloudRec.record_json;
+        delete localDeleted[dateKey];
+        downloaded++;
+      } else {
+        skipped++;
+      }
+    } else {
+      recordsToUpload.push({ date_key: dateKey, record_json: localRec, updated_at: localRec.updatedAt });
+      uploaded++;
+    }
+    cloudMap.delete(dateKey);
+  }
+
+  for (const [dateKey, deletedAt] of Object.entries(localDeleted)) {
+    if (processedDates.has(dateKey)) continue;
+
+    const cloudRec = cloudMap.get(dateKey);
+    const localDeletedTime = new Date(deletedAt).getTime();
+
+    if (cloudRec) {
+      const cloudTime = new Date(cloudRec.updated_at).getTime();
+      const cloudDeletedTime = cloudRec.deleted_at ? new Date(cloudRec.deleted_at).getTime() : 0;
+
+      if (localDeletedTime > cloudTime && localDeletedTime > cloudDeletedTime) {
+        recordsToUpload.push({ date_key: dateKey, record_json: {}, updated_at: deletedAt, deleted_at: deletedAt });
+        uploaded++;
+      } else if (cloudTime > localDeletedTime && cloudDeletedTime === 0) {
+        mergedState.records[dateKey] = cloudRec.record_json;
+        delete localDeleted[dateKey];
+        downloaded++;
+      } else if (cloudDeletedTime > localDeletedTime) {
+        localDeleted[dateKey] = cloudRec.deleted_at;
         downloaded++;
       } else {
         skipped++;
       }
       cloudMap.delete(dateKey);
+    } else {
+      recordsToUpload.push({ date_key: dateKey, record_json: {}, updated_at: deletedAt, deleted_at: deletedAt });
+      uploaded++;
     }
   }
 
-  // Cloud remaining -> download
   for (const [dateKey, cloudRec] of cloudMap.entries()) {
-    mergedState.records[dateKey] = cloudRec.record_json;
-    downloaded++;
+    if (cloudRec.deleted_at) {
+      localDeleted[dateKey] = cloudRec.deleted_at;
+      downloaded++;
+    } else {
+      mergedState.records[dateKey] = cloudRec.record_json;
+      downloaded++;
+    }
   }
 
   return { mergedState, uploaded, downloaded, skipped, recordsToUpload };
@@ -117,10 +164,10 @@ export async function syncDailyRecords({
       const upsertPayload = recordsToUpload.map(r => ({
         user_id: userId,
         date_key: r.date_key,
-        record_json: r.record_json,
+        record_json: r.record_json || {},
         schema_version: 1,
         updated_at: r.updated_at,
-        deleted_at: null,
+        deleted_at: r.deleted_at || null,
         device_id: deviceId
       }));
 

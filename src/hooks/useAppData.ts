@@ -7,7 +7,7 @@ const defaultState: AppState = {
   records: {},
 };
 
-function getOrCreateDeviceId(): string {
+export function getOrCreateDeviceId(): string {
   let id = localStorage.getItem("ielts_timebox_device_id");
   if (!id) {
     id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);

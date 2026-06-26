@@ -124,10 +124,10 @@ describe('mergeLocalAndCloudRecords', () => {
     expect(Object.keys(mergedState.records).length).toBe(0);
   });
 
-  it('normalizes YYYY-M-D and YYYY-MM-DD to same key', () => {
+  it('normalizes YYYY-M-D and YYYY-MM-DD to same key using record.date', () => {
     const localState: AppState = {
       records: {
-        '2026-5-1': createDummyRecord('2026-5-1', '2026-05-01T10:00:00Z'),
+        'some-weird-key': createDummyRecord('2026-5-1', '2026-05-01T10:00:00Z'),
         '2026-05-01': createDummyRecord('2026-05-01', '2026-05-01T12:00:00Z'), // newer
       }
     };
@@ -135,6 +135,67 @@ describe('mergeLocalAndCloudRecords', () => {
     expect(Object.keys(mergedState.records).length).toBe(1);
     expect(mergedState.records['2026-05-01']).toBeDefined();
     expect(mergedState.records['2026-05-01'].updatedAt).toBe('2026-05-01T12:00:00Z');
+  });
+
+  it('deletes local record if cloud tombstone is newer', () => {
+    const localState: AppState = {
+      records: {
+        '2026-05-19': createDummyRecord('2026-05-19', '2026-05-19T10:00:00Z'),
+      }
+    };
+    const cloudRecords = [
+      {
+        date_key: '2026-05-19',
+        updated_at: '2026-05-19T12:00:00Z',
+        deleted_at: '2026-05-19T12:00:00Z',
+        record_json: {}
+      }
+    ];
+    const { downloaded, mergedState } = mergeLocalAndCloudRecords(localState, cloudRecords, deviceId);
+    expect(downloaded).toBe(1);
+    expect(mergedState.records['2026-05-19']).toBeUndefined();
+    expect(mergedState.sync?.deletedRecords?.['2026-05-19']).toBe('2026-05-19T12:00:00Z');
+  });
+
+  it('uploads local tombstone if it is newer than cloud record', () => {
+    const localState: AppState = {
+      records: {},
+      sync: {
+        schemaVersion: 1,
+        deviceId,
+        deletedRecords: {
+          '2026-05-19': '2026-05-19T12:00:00Z'
+        }
+      }
+    };
+    const cloudRecords = [
+      {
+        date_key: '2026-05-19',
+        updated_at: '2026-05-19T10:00:00Z',
+        record_json: createDummyRecord('2026-05-19', '2026-05-19T10:00:00Z')
+      }
+    ];
+    const { uploaded, downloaded, mergedState, recordsToUpload } = mergeLocalAndCloudRecords(localState, cloudRecords, deviceId);
+    expect(uploaded).toBe(1);
+    expect(downloaded).toBe(0);
+    expect(mergedState.records['2026-05-19']).toBeUndefined();
+    expect(recordsToUpload[0].deleted_at).toBe('2026-05-19T12:00:00Z');
+  });
+
+  it('does not download cloud tombstone as a normal record if local is empty', () => {
+    const localState: AppState = { records: {} };
+    const cloudRecords = [
+      {
+        date_key: '2026-05-19',
+        updated_at: '2026-05-19T10:00:00Z',
+        deleted_at: '2026-05-19T10:00:00Z',
+        record_json: {}
+      }
+    ];
+    const { downloaded, mergedState } = mergeLocalAndCloudRecords(localState, cloudRecords, deviceId);
+    expect(downloaded).toBe(1); // it downloads the tombstone metadata
+    expect(mergedState.records['2026-05-19']).toBeUndefined();
+    expect(mergedState.sync?.deletedRecords?.['2026-05-19']).toBe('2026-05-19T10:00:00Z');
   });
 
   it('does not mutate original localState input', () => {
