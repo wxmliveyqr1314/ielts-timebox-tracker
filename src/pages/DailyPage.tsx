@@ -20,6 +20,8 @@ import {
   Settings2,
   AlertTriangle,
   Trash2,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { subDays, format } from "date-fns";
@@ -52,8 +54,10 @@ export function DailyPage({ appData }: DailyPageProps) {
     <div className="space-y-4">
       {deleteMessage && (
         <div className="p-3 bg-slate-800 text-white text-xs rounded-xl flex items-center justify-between">
-          <span>{deleteMessage}</span>
-          <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white">×</button>
+          <span className="flex-1 min-w-0 pr-2 break-words">{deleteMessage}</span>
+          <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white shrink-0 p-1">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
       {!record ? (
@@ -347,8 +351,9 @@ function SetupDaily({
     }
 
     return (
-      <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5">
-        <h3 className="text-indigo-800 font-bold text-sm mb-1">
+      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 shadow-sm">
+        <h3 className="text-indigo-800 font-bold text-sm mb-1.5 flex items-center gap-1.5">
+          <Sparkles className="w-4 h-4 text-indigo-500" />
           {title}
         </h3>
         <p className={`text-indigo-600 text-xs leading-relaxed ${recommendation.basedOnDate ? 'mb-3' : ''}`}>
@@ -385,8 +390,8 @@ function SetupDaily({
       {renderRecommendationBanner()}
 
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">
-          Daily Configuration for {formatDateStr(today)}
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+          Daily Configuration <span className="text-slate-300">/</span> {formatDateStr(today)}
         </h2>
 
         <ConfigForm
@@ -403,7 +408,7 @@ function SetupDaily({
 
       <button
         onClick={handleStart}
-        className="w-full py-3.5 bg-slate-900 text-white text-xs font-bold rounded-xl tracking-widest uppercase shadow-lg shadow-slate-200 hover:bg-slate-800 transition-colors"
+        className="w-full py-3 bg-slate-900 text-white text-sm font-bold rounded-xl tracking-wider shadow-md shadow-slate-200 hover:bg-slate-800 transition-colors"
       >
         Generate Plan
       </button>
@@ -624,8 +629,8 @@ function TrackerDaily({
             {formatDateStr(today)}
           </h2>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <span>{record.dayType.replace("_", " ").toUpperCase()}</span>
-            <span className="text-slate-300">•</span>
+            <span>{record.dayType === 'listening_focus' ? 'Dictation' : record.dayType === 'reading_focus' ? 'Reading' : record.dayType === 'speaking_focus' ? 'Speaking' : 'Recovery'}</span>
+            <span className="text-slate-300">/</span>
             <span>{record.energyLevel.toUpperCase()} ENERGY</span>
           </div>
         </div>
@@ -714,10 +719,10 @@ function TrackerDaily({
                 >
                   {task.completed && <CheckCircle2 className="w-3.5 h-3.5" />}
                 </div>
-                <div className="flex flex-col pr-3 min-w-0 overflow-hidden">
+                <div className="flex flex-col pr-3 min-w-0 flex-1 justify-center">
                   <div
                     className={cn(
-                      "text-sm font-semibold overflow-x-auto overflow-y-hidden whitespace-nowrap no-scrollbar",
+                      "text-sm font-semibold break-words leading-tight",
                       task.completed ? "text-slate-500 line-through" : "text-slate-800",
                     )}
                   >
@@ -728,7 +733,7 @@ function TrackerDaily({
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] uppercase font-bold text-slate-400 mt-1 overflow-x-auto overflow-y-hidden whitespace-nowrap no-scrollbar">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 mt-1">
                     Plan: {task.plannedMinutes}m
                   </div>
                 </div>
