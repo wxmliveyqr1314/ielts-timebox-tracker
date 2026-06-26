@@ -55,11 +55,20 @@ export function SettingsPage({
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const handleSync = async () => {
+    if (!configured) {
+      setSyncResult(`Cloud sync is not configured.`);
+      return;
+    }
+    if (!session?.user?.id || !supabase) {
+      setSyncResult(`Please sign in before syncing.`);
+      return;
+    }
+
     let deviceId: string;
     try {
       deviceId = getOrCreateDeviceId();
     } catch (e) {
-      setSyncResult(`Error: Could not generate device ID`);
+      setSyncResult(`Could not prepare this device for sync.`);
       return;
     }
 
@@ -76,10 +85,14 @@ export function SettingsPage({
     });
 
     if (result.errors.length > 0) {
-      setSyncResult(`Error: ${result.errors.join(', ')}`);
+      setSyncResult(`Sync failed. Your local data was kept safe. (${result.errors[0]})`);
     } else {
       appData.replaceData(result.mergedState);
-      setSyncResult(`Synced: uploaded ${result.uploaded}, downloaded ${result.downloaded}, skipped ${result.skipped}`);
+      if (result.uploaded === 0 && result.downloaded === 0) {
+        setSyncResult(`Sync complete: no changes.`);
+      } else {
+        setSyncResult(`Sync complete: ${result.uploaded} uploaded, ${result.downloaded} downloaded, ${result.skipped} already up to date.`);
+      }
     }
 
     setIsSyncing(false);
@@ -155,8 +168,9 @@ export function SettingsPage({
               First Cloud Sync
             </h3>
             <p className="text-sm text-slate-400 mb-6">
-              Before first cloud sync, please export a local JSON backup.<br/><br/>
+              Please export a local JSON backup first.<br/><br/>
               Cloud sync will merge local and cloud records by date. Newer updatedAt wins.<br/><br/>
+              This operation will not automatically clear your local data.<br/><br/>
               Continue?
             </p>
             <div className="flex gap-3">
