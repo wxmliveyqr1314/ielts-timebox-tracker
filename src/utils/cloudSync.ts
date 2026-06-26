@@ -14,14 +14,14 @@ export function mergeLocalAndCloudRecords(
   recordsToUpload: any[];
 } {
   const mergedState = JSON.parse(JSON.stringify(localState)) as AppState;
-  
+
   if (!mergedState.sync) {
     mergedState.sync = { schemaVersion: 1, deviceId };
   }
   if (!mergedState.sync.deletedRecords) {
     mergedState.sync.deletedRecords = {};
   }
-  
+
   // ensure valid date keys
   const newRecords: Record<string, DailyRecord> = {};
   for (const [k, v] of Object.entries(mergedState.records || {})) {
@@ -61,7 +61,7 @@ export function mergeLocalAndCloudRecords(
 
     if (cloudRec) {
       const cloudTime = new Date(cloudRec.updated_at).getTime();
-      
+
       if (cloudRec.deleted_at) {
         if (cloudTime > localTime) {
           delete mergedState.records[dateKey];
@@ -100,7 +100,7 @@ export function mergeLocalAndCloudRecords(
 
     if (cloudRec) {
       const cloudTime = new Date(cloudRec.updated_at).getTime();
-      
+
       if (cloudRec.deleted_at) {
         if (localDeletedTime > cloudTime) {
           recordsToUpload.push({ date_key: dateKey, record_json: {}, updated_at: deletedAt, deleted_at: deletedAt });
