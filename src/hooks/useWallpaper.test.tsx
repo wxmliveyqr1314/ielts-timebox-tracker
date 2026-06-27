@@ -27,7 +27,7 @@ describe("useWallpaper", () => {
     const cached = new Blob(["cached"], { type: "image/webp" });
     const deps = makeDeps({
       cachedBlob: cached,
-      cloudPreference: null,
+      fetchPreference: vi.fn(() => new Promise(() => {})),
       loadMeta: vi.fn(() => ({ userId: "user-1", wallpaperPath: "old.webp", overlayOpacity: 50 }))
     });
     const { result } = renderHook(() => useWallpaper({ userId: "user-1", deps }));
@@ -89,7 +89,7 @@ describe("useWallpaper", () => {
       loadMeta: vi.fn(() => ({ userId: "user-1", wallpaperPath: "old.webp", overlayOpacity: 50 })),
       fetchPreference: vi.fn(async () => ({ userId: "user-1", wallpaperPath: "cloud-new.webp", overlayOpacity: 50, wallpaperEnabled: true })),
       download: vi.fn(() => downloadPromise),
-      createObjectUrl: vi.fn((blob: Blob) => blob.size === 6 ? "blob:uploaded" : "blob:downloaded"),
+      createObjectUrl: vi.fn((blob: Blob) => blob.size === 9 ? "blob:uploaded" : "blob:downloaded"),
     });
     
     const { result } = renderHook(() => useWallpaper({ userId: "user-1", deps }));
