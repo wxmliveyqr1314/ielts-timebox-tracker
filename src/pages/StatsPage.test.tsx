@@ -77,11 +77,19 @@ describe("StatsPage", () => {
     expect(screen.getByText("Sleep control")).toBeTruthy();
   });
 
-  it("shows explicit counts for every status", () => {
+  it("renders status distribution segment bar with explicit counts", () => {
     render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
+    expect(screen.getByRole("region", { name: /status distribution/i })).toBeTruthy();
     for (const label of ["Green", "Yellow", "Red", "Pending"]) {
       expect(screen.getByText(label)).toBeTruthy();
     }
+  });
+
+  it("uses formatMinutes for formal study time", () => {
+    render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
+    // In makeStatsRecords, 4 days * 80 min = 320 min total formal study time.
+    // formatMinutes(320) yields "5h 20m"
+    expect(screen.getByText(/5h 20m/)).toBeTruthy();
   });
 
   it("renders a neutral empty state without invalid percentages", () => {
@@ -92,7 +100,7 @@ describe("StatsPage", () => {
   });
 
   it("renders the approved supporting message", () => {
-    render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
+    render(<StatsPage appData={{ data: { records: {} } }} />);
     expect(screen.getByText(/steady progress, not daily perfection/i)).toBeTruthy();
   });
 });

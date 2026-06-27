@@ -91,6 +91,13 @@ export function HistoryPage({ appData }: { appData: any }) {
     pending: "bg-slate-50 text-slate-500 border-slate-200",
   };
 
+  const statusBorderColors = {
+    green: "bg-emerald-500",
+    yellow: "bg-amber-500",
+    red: "bg-rose-500",
+    pending: "bg-slate-400",
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="wallpaper-surface rounded-lg border border-slate-200 p-4 shadow-sm">
@@ -127,7 +134,7 @@ export function HistoryPage({ appData }: { appData: any }) {
           
           return (
             <div key={record.date} className="wallpaper-surface rounded-lg border border-slate-200 overflow-hidden shadow-sm flex flex-col relative">
-              <div className={cn("absolute left-0 top-0 bottom-0 w-1", statusColors[record.status || "pending"].replace("bg-", "bg-").replace("text-", "bg-").split(" ")[0])} />
+              <div className={cn("absolute left-0 top-0 bottom-0 w-1", statusBorderColors[record.status || "pending"])} />
               <button
                 type="button"
                 className="w-full p-4 pl-5 text-left hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 flex items-center justify-between"
