@@ -92,7 +92,7 @@ describe("StatsPage", () => {
   });
 
   it("renders the approved supporting message", () => {
-    render(<StatsPage appData={{ data: { records: {} } }} />);
+    render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
     expect(screen.getByText(/steady progress, not daily perfection/i)).toBeTruthy();
   });
 });

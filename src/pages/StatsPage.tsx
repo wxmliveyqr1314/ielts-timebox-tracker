@@ -26,18 +26,34 @@ export function StatsPage({ appData }: { appData: any }) {
   const sleepStats = getSleepControlStats(recent7);
   const speakingStats = getSpeakingStats(recent7);
 
+  if (allRecords.length === 0) {
+    return (
+      <div className="flex flex-col gap-6 pb-6">
+        <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <Activity className="w-6 h-6 text-indigo-500" />
+          Stats
+        </h1>
+        <div className="py-20 text-center wallpaper-surface rounded-lg border border-slate-200">
+          <Activity className="w-6 h-6 mx-auto text-slate-400 mb-3" />
+          <p className="text-sm font-semibold text-slate-600">No stats yet</p>
+          <p className="text-xs text-slate-500 mt-1">Complete a day to see your trends.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6 pb-6">
       <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
         <Activity className="w-6 h-6 text-indigo-500" />
-        学习统计
+        Stats
       </h1>
 
       {/* 核心卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-2xl border border-orange-200 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase text-orange-600 tracking-wider">Current Streak</span>
+            <span className="text-xs font-bold uppercase text-orange-600 tracking-wider">Current streak</span>
             <Flame className="w-5 h-5 text-orange-500" />
           </div>
           <div className="flex items-end gap-2">
@@ -51,7 +67,7 @@ export function StatsPage({ appData }: { appData: any }) {
 
         <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-2xl border border-indigo-200 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase text-indigo-600 tracking-wider">7-Day Study</span>
+            <span className="text-xs font-bold uppercase text-indigo-600 tracking-wider">Study time</span>
             <Clock className="w-5 h-5 text-indigo-500" />
           </div>
           <div className="flex items-end gap-2">
@@ -65,7 +81,7 @@ export function StatsPage({ appData }: { appData: any }) {
 
         <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-2xl border border-emerald-200 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase text-emerald-600 tracking-wider">7-Day Speaking</span>
+            <span className="text-xs font-bold uppercase text-emerald-600 tracking-wider">Speaking</span>
             <Mic className="w-5 h-5 text-emerald-500" />
           </div>
           <div className="flex items-end gap-2">
@@ -80,8 +96,8 @@ export function StatsPage({ appData }: { appData: any }) {
 
       {/* 状态分布 */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">7-Day Status Distribution</h2>
-        <div className="grid grid-cols-4 gap-2 text-center">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Status distribution</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
           <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-100 flex flex-col">
             <span className="text-xl font-black text-emerald-600">{statusCounts.green}</span>
             <span className="text-[10px] uppercase font-bold text-emerald-500">Green</span>
@@ -103,7 +119,7 @@ export function StatsPage({ appData }: { appData: any }) {
 
       {/* 模块时长统计 */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">7-Day Time By Module (Minutes)</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Time by module</h2>
         <div className="space-y-3">
           <StatBar label="Momo" value={moduleMins.totalMomo} max={140} color="bg-indigo-500" icon={<BookOpen className="w-3.5 h-3.5" />} />
           <StatBar label="Dictation" value={moduleMins.totalDictation} max={210} color="bg-sky-500" icon={<Headphones className="w-3.5 h-3.5" />} />
@@ -116,7 +132,7 @@ export function StatsPage({ appData }: { appData: any }) {
       {/* 防熬夜统计 */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-          <Moon className="w-4 h-4 text-slate-400" /> 7-Day Sleep Control
+          <Moon className="w-4 h-4 text-slate-400" /> Sleep control
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between">
@@ -139,7 +155,7 @@ export function StatsPage({ appData }: { appData: any }) {
       </div>
 
       <div className="text-center text-xs font-semibold text-slate-400 px-4 mt-2">
-        "绿色或黄色都算不断线。目标是持续推进，而不是每天完美。"
+        "Steady progress, not daily perfection."
       </div>
 
     </div>
