@@ -12,7 +12,7 @@ export interface WallpaperViewState {
 }
 
 export interface UseWallpaperResult extends WallpaperViewState {
-  uploadAndApply(file: File): Promise<void>;
+  uploadAndApply(file: File): Promise<boolean>;
   setEnabled(enabled: boolean): Promise<void>;
   setOverlayOpacity(value: number): Promise<void>;
   remove(): Promise<void>;
@@ -44,7 +44,7 @@ export interface WallpaperHookDeps {
   now(): Date;
 }
 
-export function useWallpaper({ userId, deps }: { userId: string | null; deps: WallpaperHookDeps }): UseWallpaperResult {
+export function useWallpaper({ userId, authReady, deps }: { userId: string | null; authReady: boolean; deps: WallpaperHookDeps }): UseWallpaperResult {
   const [ready, setReady] = useState(false);
   const [active, setActive] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -78,11 +78,19 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
   }, [deps]);
 
   useEffect(() => {
+    opIdRef.current++;
+    setBusy(null);
+  }, [userId, authReady]);
+
+  useEffect(() => {
+    if (!authReady) return;
+
     const opId = ++opIdRef.current;
     let isStale = () => opId !== opIdRef.current;
 
     const init = async () => {
       setReady(false);
+      try {
       const meta = deps.loadMeta();
       const needsHide = meta && userId && meta.ownerUserId !== userId;
 
@@ -124,13 +132,16 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
         if (isStale()) return;
 
         if (!cloudPref || !cloudPref.wallpaperPath) {
-          if (meta && !needsHide) {
-            await deps.clearCache();
-          }
-          if (isStale()) return;
           setActive(false);
           updateImageUrl(null);
           setPreference(cloudPref || null);
+          if (meta && !needsHide) {
+            try {
+              await deps.clearCache();
+            } catch (e: any) {
+              if (!isStale()) setNotice({ type: "warning", message: e.message || "Failed to clear cache." });
+            }
+          }
           return;
         }
 
@@ -153,26 +164,36 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
           setNotice({ type: "warning", message: err.message || "Failed to sync wallpaper from cloud." });
         }
       }
+
+      } catch (err: any) {
+        if (!isStale()) {
+          setActive(false);
+          updateImageUrl(null);
+          setPreference(null);
+          setReady(true);
+          setNotice({ type: "warning", message: err.message || "Failed to load local wallpaper cache." });
+        }
+      }
     };
 
     init();
-  }, [userId, deps, updateImageUrl]);
+  }, [userId, authReady, deps, updateImageUrl]);
 
-  const uploadAndApply = async (file: File) => {
-    if (!userId) return;
+  const uploadAndApply = async (file: File): Promise<boolean> => {
+    if (!userId) return false;
     setBusy("upload");
     const opId = ++opIdRef.current;
     let isStale = () => opId !== opIdRef.current;
     try {
       const processed = await deps.processImage(file);
-      if (isStale()) return;
+      if (isStale()) return false;
       const { preference: newPref, cleanupWarning } = await deps.replace({
         userId,
         image: processed,
         previous: preference,
         overlayOpacity,
       });
-      if (isStale()) return;
+      if (isStale()) return false;
 
       setPreference(newPref);
       setActive(true);
@@ -182,10 +203,12 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
       } else {
         setNotice({ type: "success", message: "Wallpaper updated successfully." });
       }
+      return true;
     } catch (err: any) {
       if (!isStale()) {
         setNotice({ type: "error", message: err.message || "Failed to upload wallpaper." });
       }
+      return false;
     } finally {
       if (!isStale()) setBusy(null);
     }

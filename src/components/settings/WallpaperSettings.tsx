@@ -44,9 +44,11 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
 
   const handleUpload = async () => {
     if (!selectedFile || !signedIn) return;
-    await wallpaper.uploadAndApply(selectedFile);
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    const success = await wallpaper.uploadAndApply(selectedFile);
+    if (success) {
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,7 +150,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
         <label className="block text-sm font-medium text-slate-700 mb-2" htmlFor="wallpaperInput">
           Choose wallpaper image
         </label>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <input
             id="wallpaperInput"
             ref={fileInputRef}
@@ -161,7 +163,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
           <button
             onClick={handleUpload}
             disabled={!selectedFile || !signedIn || isBusy}
-            className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors"
+            className="flex items-center justify-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors w-full sm:w-auto"
           >
             {isBusy && wallpaper.busy === "upload" ? "Uploading..." : (
               <>

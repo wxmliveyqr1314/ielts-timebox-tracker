@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, act, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WallpaperSettings } from "./WallpaperSettings";
 import { UseWallpaperResult } from "../../hooks/useWallpaper";
@@ -62,5 +62,44 @@ describe("WallpaperSettings", () => {
     vi.advanceTimersByTime(400);
     expect(setOverlayOpacity).toHaveBeenCalledWith(55);
     vi.useRealTimers();
+  });
+
+  it("retains selected file on upload failure", async () => {
+    const uploadAndApply = vi.fn().mockResolvedValue(false);
+    render(<WallpaperSettings wallpaper={makeWallpaper({ uploadAndApply })} signedIn />);
+    const file = new File(["image"], "wallpaper.png", { type: "image/png" });
+    const input = screen.getByLabelText(/choose wallpaper image/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    // Ensure preview is shown
+    expect(screen.getByRole("button", { name: /upload & apply/i })).toBeDefined();
+
+    const btn = screen.getByRole("button", { name: /upload & apply/i });
+    await act(async () => {
+      fireEvent.click(btn);
+    });
+
+    expect(uploadAndApply).toHaveBeenCalledWith(file);
+    // Button should still be enabled because selectedFile was not cleared
+    expect((screen.getByRole("button", { name: /upload & apply/i }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("clears file and preview on upload success", async () => {
+    const uploadAndApply = vi.fn().mockResolvedValue(true);
+    render(<WallpaperSettings wallpaper={makeWallpaper({ uploadAndApply })} signedIn />);
+    const file = new File(["image"], "wallpaper.png", { type: "image/png" });
+    const input = screen.getByLabelText(/choose wallpaper image/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(screen.getByRole("button", { name: /upload & apply/i })).toBeDefined();
+
+    const btn = screen.getByRole("button", { name: /upload & apply/i });
+    await act(async () => {
+      fireEvent.click(btn);
+    });
+
+    expect(uploadAndApply).toHaveBeenCalledWith(file);
+    // Button should be disabled because selectedFile is cleared
+    await waitFor(() => expect((screen.getByRole("button", { name: /upload & apply/i }) as HTMLButtonElement).disabled).toBe(true));
   });
 });

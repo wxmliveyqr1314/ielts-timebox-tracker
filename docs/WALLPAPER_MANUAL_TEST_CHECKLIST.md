@@ -2,9 +2,9 @@
 
 ## 1. Auth & Account Isolation
 - [ ] Log in as User A, upload wallpaper, verify it shows.
-- [ ] Log out, verify wallpaper reverts to disabled default.
-- [ ] Log in as User B, verify User A's wallpaper is not visible.
-- [ ] Log in as User A again, verify User A's wallpaper restores.
+- [ ] Log out, verify the local cached wallpaper continues to show (since no new user is logged in).
+- [ ] Log in as User B, verify User A's wallpaper is immediately cleared.
+- [ ] Log in as User A again, verify User A's wallpaper restores from cloud.
 
 ## 2. Offline Resilience
 - [ ] Set wallpaper, go offline (disconnect internet).

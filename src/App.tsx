@@ -13,7 +13,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState("daily");
   const appData = useAppData();
   const auth = useSupabaseAuth();
-  const wallpaper = useWallpaper({ userId: auth.session?.user.id ?? null, deps: realWallpaperDeps });
+  const wallpaper = useWallpaper({ userId: auth.session?.user.id ?? null, authReady: !auth.loading, deps: realWallpaperDeps });
 
   return (
     <AppLayout currentTab={currentTab} onChangeTab={setCurrentTab} wallpaper={wallpaper}>
