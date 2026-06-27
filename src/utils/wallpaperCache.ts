@@ -32,8 +32,8 @@ export async function loadWallpaperBlob(): Promise<Blob | null> {
   return (await runRequest<Blob | undefined>("readonly", store => store.get(ACTIVE_KEY))) ?? null;
 }
 export async function clearWallpaperCache(): Promise<void> {
-  await runRequest("readwrite", store => store.delete(ACTIVE_KEY));
   localStorage.removeItem(WALLPAPER_META_KEY);
+  await runRequest("readwrite", store => store.delete(ACTIVE_KEY));
 }
 export function loadWallpaperMeta(): WallpaperLocalMeta | null {
   try { return parseWallpaperLocalMeta(JSON.parse(localStorage.getItem(WALLPAPER_META_KEY) ?? "null")); }

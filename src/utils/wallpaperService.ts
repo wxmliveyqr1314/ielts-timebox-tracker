@@ -34,11 +34,15 @@ export async function replaceWallpaper(args: {
     try { await args.deps.remove(path); } catch { /* ignore */ }
     throw error;
   }
-  await args.deps.saveCache(args.image.blob, preference);
   let cleanupWarning: string | null = null;
+  try {
+    await args.deps.saveCache(args.image.blob, preference);
+  } catch {
+    cleanupWarning = "Wallpaper was synced to the cloud, but could not be cached locally.";
+  }
   if (args.previous?.wallpaperPath && args.previous.wallpaperPath !== path) {
     try { await args.deps.remove(args.previous.wallpaperPath); }
-    catch { cleanupWarning = "The new wallpaper is active, but the previous file could not be removed."; }
+    catch { cleanupWarning = cleanupWarning ? `${cleanupWarning} Also, the previous file could not be removed.` : "The new wallpaper is active, but the previous file could not be removed."; }
   }
   return { preference, cleanupWarning };
 }
@@ -50,11 +54,15 @@ export async function removeWallpaper(args: {
   const now = args.deps.now().toISOString();
   const cleared = { ...args.current, wallpaperPath: null, wallpaperEnabled: false, wallpaperUpdatedAt: null, updatedAt: now };
   await args.deps.savePreference(cleared);
-  await args.deps.clearCache();
   let cleanupWarning: string | null = null;
+  try {
+    await args.deps.clearCache();
+  } catch {
+    cleanupWarning = "Wallpaper preference was cleared, but the local cache could not be deleted.";
+  }
   if (args.current.wallpaperPath) {
     try { await args.deps.remove(args.current.wallpaperPath); }
-    catch { cleanupWarning = "Wallpaper was disabled, but the cloud file could not be removed."; }
+    catch { cleanupWarning = cleanupWarning ? `${cleanupWarning} Also, the cloud file could not be removed.` : "Wallpaper was disabled, but the cloud file could not be removed."; }
   }
   return { preference: cleared, cleanupWarning };
 }

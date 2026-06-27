@@ -70,4 +70,20 @@ describe("wallpaper service orchestration", () => {
     expect(order).toEqual(["preference", "cache", "remove"]);
     expect(result.preference).toMatchObject({ wallpaperPath: null, wallpaperEnabled: false });
   });
+
+  it("reports but does not roll back when cache save fails", async () => {
+    const deps = makeDeps({ saveCache: vi.fn().mockRejectedValue(new Error("cache failed")) });
+    const result = await replaceWallpaper({ userId: "user-1", image, previous, overlayOpacity: 42, deps });
+    expect(result.preference.wallpaperPath).toBe("user-1/1782547200000.webp");
+    expect(result.cleanupWarning).toContain("could not be cached locally");
+    expect(deps.remove).toHaveBeenCalledWith("user-1/old.webp");
+  });
+
+  it("reports but does not roll back when cache clear fails", async () => {
+    const deps = makeDeps({ clearCache: vi.fn().mockRejectedValue(new Error("cache failed")) });
+    const result = await removeWallpaper({ current: previous, deps });
+    expect(result.preference.wallpaperEnabled).toBe(false);
+    expect(result.cleanupWarning).toContain("local cache could not be deleted");
+    expect(deps.remove).toHaveBeenCalledWith("user-1/old.webp");
+  });
 });
