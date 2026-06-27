@@ -84,8 +84,12 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
     const init = async () => {
       setReady(false);
       const meta = deps.loadMeta();
-      const needsHide = meta && userId && meta.userId !== userId;
-      
+      const needsHide = meta && userId && meta.ownerUserId !== userId;
+
+      if (needsHide) {
+        await deps.clearCache();
+      }
+
       let initialBlob: Blob | null = null;
       if (meta && !needsHide) {
         initialBlob = await deps.loadBlob();
@@ -95,14 +99,14 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
 
       if (initialBlob && meta && !needsHide) {
         updateImageUrl(initialBlob);
-        setActive(true);
+        setActive(meta.enabled);
         setOverlayOpacityState(meta.overlayOpacity);
         setPreference({
-          userId: meta.userId,
-          wallpaperPath: meta.wallpaperPath,
-          wallpaperEnabled: true,
+          userId: meta.ownerUserId || userId || "local",
+          wallpaperPath: meta.cloudPath,
+          wallpaperEnabled: meta.enabled,
           overlayOpacity: meta.overlayOpacity,
-          wallpaperUpdatedAt: new Date().toISOString(),
+          wallpaperUpdatedAt: meta.wallpaperUpdatedAt || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
       } else {
@@ -110,7 +114,7 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
         setActive(false);
         setPreference(null);
       }
-      
+
       setReady(true);
 
       if (!userId) return;
@@ -118,8 +122,8 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
       try {
         const cloudPref = await deps.fetchPreference(userId);
         if (isStale()) return;
-        
-        if (!cloudPref || !cloudPref.wallpaperEnabled || !cloudPref.wallpaperPath) {
+
+        if (!cloudPref || !cloudPref.wallpaperPath) {
           if (meta && !needsHide) {
             await deps.clearCache();
           }
@@ -129,19 +133,19 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
           setPreference(cloudPref || null);
           return;
         }
-        
+
         setPreference(cloudPref);
         setOverlayOpacityState(cloudPref.overlayOpacity);
-        setActive(true);
+        setActive(cloudPref.wallpaperEnabled);
 
-        const isNewer = !meta || meta.wallpaperPath !== cloudPref.wallpaperPath;
+        const isNewer = !meta || meta.cloudPath !== cloudPref.wallpaperPath;
         if (isNewer || !initialBlob) {
           const blob = await deps.download(cloudPref.wallpaperPath);
           if (isStale()) return;
-          
+
           await deps.saveDownloaded(blob, cloudPref);
           if (isStale()) return;
-          
+
           updateImageUrl(blob);
         }
       } catch (err: any) {
@@ -169,7 +173,7 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
         overlayOpacity,
       });
       if (isStale()) return;
-      
+
       setPreference(newPref);
       setActive(true);
       updateImageUrl(processed.blob);
@@ -198,6 +202,11 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
       await deps.savePreference(newPref);
       if (isStale()) return;
       setPreference(newPref);
+
+      const meta = deps.loadMeta();
+      if (meta) {
+        deps.saveMeta({ ...meta, enabled });
+      }
     } catch (err: any) {
       if (!isStale()) {
         setActive(!enabled);
@@ -219,7 +228,7 @@ export function useWallpaper({ userId, deps }: { userId: string | null; deps: Wa
       await deps.savePreference(newPref);
       if (isStale()) return;
       setPreference(newPref);
-      
+
       const meta = deps.loadMeta();
       if (meta) {
         deps.saveMeta({ ...meta, overlayOpacity: value });

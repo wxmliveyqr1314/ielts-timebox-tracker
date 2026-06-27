@@ -28,7 +28,7 @@ describe("useWallpaper", () => {
     const deps = makeDeps({
       cachedBlob: cached,
       fetchPreference: vi.fn(() => new Promise(() => {})),
-      loadMeta: vi.fn(() => ({ userId: "user-1", wallpaperPath: "old.webp", overlayOpacity: 50 }))
+      loadMeta: vi.fn(() => ({ schemaVersion: 1, enabled: true, ownerUserId: "user-1", cloudPath: "old.webp", overlayOpacity: 50 }))
     });
     const { result } = renderHook(() => useWallpaper({ userId: "user-1", deps }));
     await waitFor(() => expect(result.current.ready).toBe(true));
@@ -38,7 +38,7 @@ describe("useWallpaper", () => {
   it("hides a previous account cache before loading another account", async () => {
     const deps = makeDeps({
       cachedBlob: new Blob(["a"]),
-      loadMeta: vi.fn(() => ({ userId: "user-a", wallpaperPath: "old.webp", overlayOpacity: 50 }))
+      loadMeta: vi.fn(() => ({ schemaVersion: 1, enabled: true, ownerUserId: "user-a", cloudPath: "old.webp", overlayOpacity: 50 }))
     });
     const { result } = renderHook(() => useWallpaper({ userId: "user-b", deps }));
     await waitFor(() => expect(result.current.ready).toBe(true));
@@ -48,7 +48,7 @@ describe("useWallpaper", () => {
   it("cloud download rejection leaves active === true, keeps the cached Object URL, and sets a warning notice", async () => {
     const deps = makeDeps({
       cachedBlob: new Blob(["cached"]),
-      loadMeta: vi.fn(() => ({ userId: "user-1", wallpaperPath: "old.webp", overlayOpacity: 50 })),
+      loadMeta: vi.fn(() => ({ schemaVersion: 1, enabled: true, ownerUserId: "user-1", cloudPath: "old.webp", overlayOpacity: 50 })),
       fetchPreference: vi.fn(async () => ({ userId: "user-1", wallpaperPath: "new.webp", overlayOpacity: 50, wallpaperEnabled: true })),
       download: vi.fn().mockRejectedValue(new Error("offline"))
     });
@@ -63,20 +63,20 @@ describe("useWallpaper", () => {
     let urlCounter = 0;
     const deps = makeDeps({
       cachedBlob: new Blob(["cached"]),
-      loadMeta: vi.fn(() => ({ userId: "user-1", wallpaperPath: "old.webp", overlayOpacity: 50 })),
+      loadMeta: vi.fn(() => ({ schemaVersion: 1, enabled: true, ownerUserId: "user-1", cloudPath: "old.webp", overlayOpacity: 50 })),
       createObjectUrl: vi.fn(() => `blob:fake-url-${++urlCounter}`)
     });
     const { result, unmount } = renderHook(() => useWallpaper({ userId: "user-1", deps }));
     await waitFor(() => expect(result.current.ready).toBe(true));
     expect(deps.createObjectUrl).toHaveBeenCalledTimes(1);
-    
+
     await act(async () => {
       await result.current.uploadAndApply(new File([""], "test.png", { type: "image/png" }));
     });
-    
+
     expect(deps.createObjectUrl).toHaveBeenCalledTimes(2);
     expect(deps.revokeObjectUrl).toHaveBeenCalledWith("blob:fake-url-1");
-    
+
     unmount();
     expect(deps.revokeObjectUrl).toHaveBeenCalledWith("blob:fake-url-2");
   });
@@ -86,25 +86,25 @@ describe("useWallpaper", () => {
     const downloadPromise = new Promise<Blob>((resolve) => { resolveDownload = resolve; });
     const deps = makeDeps({
       cachedBlob: new Blob(["cached"]),
-      loadMeta: vi.fn(() => ({ userId: "user-1", wallpaperPath: "old.webp", overlayOpacity: 50 })),
+      loadMeta: vi.fn(() => ({ schemaVersion: 1, enabled: true, ownerUserId: "user-1", cloudPath: "old.webp", overlayOpacity: 50 })),
       fetchPreference: vi.fn(async () => ({ userId: "user-1", wallpaperPath: "cloud-new.webp", overlayOpacity: 50, wallpaperEnabled: true })),
       download: vi.fn(() => downloadPromise),
       createObjectUrl: vi.fn((blob: Blob) => blob.size === 9 ? "blob:uploaded" : "blob:downloaded"),
     });
-    
+
     const { result } = renderHook(() => useWallpaper({ userId: "user-1", deps }));
     await waitFor(() => expect(result.current.ready).toBe(true));
-    
+
     await act(async () => {
       await result.current.uploadAndApply(new File(["upload"], "test.png", { type: "image/png" }));
     });
-    
+
     expect(result.current.imageUrl).toBe("blob:uploaded");
-    
+
     await act(async () => {
       resolveDownload(new Blob(["download"], { type: "image/webp" }));
     });
-    
+
     expect(result.current.imageUrl).toBe("blob:uploaded");
   });
 });

@@ -389,7 +389,7 @@ function SetupDaily({
     <div className="flex flex-col gap-6">
       {renderRecommendationBanner()}
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
           Daily Configuration <span className="text-slate-300">/</span> {formatDateStr(today)}
         </h2>
@@ -591,7 +591,7 @@ function TrackerDaily({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden wallpaper-surface">
       {/* Regeneration Confirmation Modal */}
       {showConfirmRegenerate && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex flex-col items-center justify-center p-4">
@@ -695,7 +695,7 @@ function TrackerDaily({
             <div
               key={task.id}
               className={cn(
-                "w-full flex justify-between items-center p-3 rounded-xl border transition-all",
+                "w-full flex justify-between items-center p-3 rounded-xl border transition-all wallpaper-surface",
                 task.completed
                   ? "bg-slate-50 border-slate-100"
                   : task.isCore

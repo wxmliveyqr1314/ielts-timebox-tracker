@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Image, Upload, Eye, Trash2 } from "lucide-react";
 import { UseWallpaperResult } from "../../hooks/useWallpaper";
 
@@ -9,15 +9,32 @@ interface WallpaperSettingsProps {
 
 export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [localOpacity, setLocalOpacity] = useState(wallpaper.overlayOpacity);
   const opacityTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setLocalOpacity(wallpaper.overlayOpacity);
   }, [wallpaper.overlayOpacity]);
+
+  useEffect(() => {
+    if (selectedFile) {
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [selectedFile]);
+
+  useEffect(() => {
+    return () => {
+      if (opacityTimerRef.current) window.clearTimeout(opacityTimerRef.current);
+    };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -35,7 +52,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
   const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     setLocalOpacity(val);
-    
+
     if (opacityTimerRef.current) window.clearTimeout(opacityTimerRef.current);
     opacityTimerRef.current = window.setTimeout(() => {
       wallpaper.setOverlayOpacity(val);
@@ -57,7 +74,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
       </div>
 
       {wallpaper.notice && (
-        <div 
+        <div
           role={wallpaper.notice.type === "error" ? "alert" : "status"}
           className={`px-3 py-2 rounded-lg mb-4 text-sm ${
             wallpaper.notice.type === "error" ? "bg-red-50 text-red-700 border border-red-100" :
@@ -70,11 +87,11 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
         </div>
       )}
 
-      {wallpaper.imageUrl && (
+      {(previewUrl || wallpaper.imageUrl) && (
         <div className="mb-5">
-          <div 
+          <div
             className="w-full aspect-video rounded-lg border border-slate-200 overflow-hidden relative"
-            style={{ backgroundImage: `url(${wallpaper.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            style={{ backgroundImage: `url(${previewUrl || wallpaper.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
           >
             <div className="absolute inset-0 bg-slate-950" style={{ opacity: localOpacity / 100 }} />
             {!wallpaper.active && (
@@ -83,12 +100,12 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center justify-between mt-4">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={wallpaper.active} 
+              <input
+                type="checkbox"
+                checked={wallpaper.active}
                 onChange={(e) => wallpaper.setEnabled(e.target.checked)}
                 disabled={isBusy || !signedIn}
                 className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
@@ -96,7 +113,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
               <span className="text-sm font-medium text-slate-700">Enable wallpaper</span>
             </label>
 
-            <button 
+            <button
               onClick={() => setShowRemoveDialog(true)}
               disabled={isBusy || !signedIn}
               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1 disabled:opacity-50"

@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@layer components {
+  [data-wallpaper-active="true"] .wallpaper-surface {
+    background-color: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  [data-wallpaper-active="true"] .wallpaper-surface-dark {
+    background-color: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;

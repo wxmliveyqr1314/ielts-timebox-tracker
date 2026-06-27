@@ -8,6 +8,8 @@ import { syncDailyRecords } from "../utils/cloudSync";
 import { supabase } from "../utils/supabaseClient";
 import { getOrCreateDeviceId } from "../hooks/useAppData";
 import { analyzeAppDataHealth } from "../utils/dataHealth";
+import { WallpaperSettings } from "../components/settings/WallpaperSettings";
+import { UseWallpaperResult } from "../hooks/useWallpaper";
 
 function formatDeviceId(id: string | null) {
   if (!id) return "Not prepared yet";
@@ -24,6 +26,8 @@ function formatSyncResult(uploaded: number, downloaded: number, skipped: number)
 
 export function SettingsPage({
   appData,
+  auth,
+  wallpaper,
 }: {
   appData: {
     data: AppState;
@@ -31,6 +35,8 @@ export function SettingsPage({
     clearData: () => void;
     replaceData: (data: AppState) => void;
   };
+  auth: ReturnType<typeof useSupabaseAuth>;
+  wallpaper: UseWallpaperResult;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,7 +53,7 @@ export function SettingsPage({
     URL.revokeObjectURL(url);
   };
 
-  const { session, email, loading, configured, error, sendMagicLink, verifyEmailOtp, signOut } = useSupabaseAuth();
+  const { session, email, loading, configured, error, sendMagicLink, verifyEmailOtp, signOut } = auth;
   const [authEmail, setAuthEmail] = useState("");
   const [authOtp, setAuthOtp] = useState("");
   const [authNotice, setAuthNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -272,7 +278,7 @@ export function SettingsPage({
           </div>
         </div>
       )}
-      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-lg border border-white/5">
+      <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-lg border border-white/5 wallpaper-surface-dark">
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
           Cloud Sync (Phase 1)
         </h2>
@@ -408,6 +414,8 @@ export function SettingsPage({
             )}
           </div>
         </div>
+
+        <WallpaperSettings wallpaper={wallpaper} signedIn={!!session} />
 
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 mt-8">
           Data Health
