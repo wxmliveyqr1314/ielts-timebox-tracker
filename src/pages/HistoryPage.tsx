@@ -128,7 +128,7 @@ export function HistoryPage({ appData }: { appData: any }) {
           return (
             <div key={record.date} className="wallpaper-surface rounded-lg border border-slate-200 overflow-hidden shadow-sm flex flex-col relative">
               <div className={cn("absolute left-0 top-0 bottom-0 w-1", statusColors[record.status || "pending"].replace("bg-", "bg-").replace("text-", "bg-").split(" ")[0])} />
-              <button 
+              <button
                 type="button"
                 className="w-full p-4 pl-5 text-left hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 flex items-center justify-between"
                 onClick={() => toggleExpand(record.date)}
@@ -232,7 +232,7 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
                 <span className="text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">Plan {task.plannedMinutes}m</span>
                 <div className="w-14 shrink-0">
                   {task.category !== "sleep_control" ? (
-                    <input 
+                    <input
                       type="number"
                       min="0"
                       className="w-full text-center text-xs font-mono py-1 border border-slate-200 rounded-md focus:outline-none focus:border-indigo-500 bg-white/80"
