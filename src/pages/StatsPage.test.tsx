@@ -71,6 +71,7 @@ describe("StatsPage", () => {
     const records: Record<string, DailyRecord> = makeStatsRecords();
     render(<StatsPage appData={{ data: { records } }} />);
     expect(screen.getByRole("heading", { name: "Stats" })).toBeTruthy();
+    expect(screen.getByText("Last 7 days")).toBeTruthy();
     expect(screen.getByText("Current streak")).toBeTruthy();
     expect(screen.getByText("Status distribution")).toBeTruthy();
     expect(screen.getByText("Time by module")).toBeTruthy();
@@ -95,6 +96,7 @@ describe("StatsPage", () => {
   it("renders a neutral empty state without invalid percentages", () => {
     const { container } = render(<StatsPage appData={{ data: { records: {} } }} />);
     expect(screen.getByText(/complete a day to see your trends/i)).toBeTruthy();
+    expect(screen.getByText("Last 7 days")).toBeTruthy();
     expect(container.innerHTML).not.toContain("NaN");
     expect(container.innerHTML).not.toContain("Infinity");
   });

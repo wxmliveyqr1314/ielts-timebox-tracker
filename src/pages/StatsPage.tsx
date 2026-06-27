@@ -45,13 +45,22 @@ export function StatsPage({ appData }: { appData: any }) {
     </div>
   );
 
+  const header = (
+    <div className="flex items-center justify-between wallpaper-surface p-4 rounded-lg border border-slate-200 shadow-sm">
+      <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+        <Activity className="w-6 h-6 text-indigo-500" />
+        Stats
+      </h1>
+      <div className="bg-slate-100/50 backdrop-blur-sm text-slate-500 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
+        Last 7 days
+      </div>
+    </div>
+  );
+
   if (allRecords.length === 0) {
     return (
       <div className="flex flex-col gap-6 pb-6">
-        <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-          <Activity className="w-6 h-6 text-indigo-500" />
-          Stats
-        </h1>
+        {header}
         <div className="py-20 text-center wallpaper-surface rounded-lg border border-slate-200">
           <Activity className="w-6 h-6 mx-auto text-slate-400 mb-3" />
           <p className="text-sm font-semibold text-slate-600">No stats yet</p>
@@ -64,10 +73,7 @@ export function StatsPage({ appData }: { appData: any }) {
 
   return (
     <div className="flex flex-col gap-6 pb-6">
-      <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-        <Activity className="w-6 h-6 text-indigo-500" />
-        Stats
-      </h1>
+      {header}
 
       {/* 核心卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -155,20 +161,22 @@ export function StatsPage({ appData }: { appData: any }) {
         </h2>
         <div className="flex flex-col">
           <div className="flex justify-between items-center py-3 border-b border-slate-100 last:border-b-0">
-            <span className="text-sm font-semibold text-slate-600">Stopped On Time</span>
-            <span className="text-sm font-bold text-slate-800">{sleepStats.stoppedOnTime}</span>
+            <span className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+              <Moon className="w-4 h-4 text-emerald-500" /> Stopped On Time
+            </span>
+            <span className="text-sm font-bold text-emerald-600">{sleepStats.stoppedOnTime}</span>
           </div>
           <div className="flex justify-between items-center py-3 border-b border-slate-100 last:border-b-0">
-            <span className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-slate-400" /> Late New Task
+            <span className={cn("text-sm font-semibold flex items-center gap-2", sleepStats.lateNewTask > 0 ? "text-rose-600" : "text-slate-600")}>
+              <ShieldAlert className={cn("w-4 h-4", sleepStats.lateNewTask > 0 ? "text-rose-500" : "text-slate-400")} /> Late New Task
             </span>
-            <span className="text-sm font-bold text-slate-800">{sleepStats.lateNewTask}</span>
+            <span className={cn("text-sm font-bold", sleepStats.lateNewTask > 0 ? "text-rose-600" : "text-slate-800")}>{sleepStats.lateNewTask}</span>
           </div>
           <div className="flex justify-between items-center py-3 border-b border-slate-100 last:border-b-0">
-            <span className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-slate-400" /> Compensatory Stay Up
+            <span className={cn("text-sm font-semibold flex items-center gap-2", sleepStats.compensatoryStayingUp > 0 ? "text-rose-600" : "text-slate-600")}>
+              <ShieldAlert className={cn("w-4 h-4", sleepStats.compensatoryStayingUp > 0 ? "text-rose-500" : "text-slate-400")} /> Compensatory Stay Up
             </span>
-            <span className="text-sm font-bold text-slate-800">{sleepStats.compensatoryStayingUp}</span>
+            <span className={cn("text-sm font-bold", sleepStats.compensatoryStayingUp > 0 ? "text-rose-600" : "text-slate-800")}>{sleepStats.compensatoryStayingUp}</span>
           </div>
         </div>
       </div>
