@@ -79,7 +79,7 @@ export function StatsPage({ appData }: { appData: any }) {
       </div>
 
       {/* 状态分布 */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">7-Day Status Distribution</h2>
         <div className="grid grid-cols-4 gap-2 text-center">
           <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-100 flex flex-col">
@@ -102,7 +102,7 @@ export function StatsPage({ appData }: { appData: any }) {
       </div>
 
       {/* 模块时长统计 */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">7-Day Time By Module (Minutes)</h2>
         <div className="space-y-3">
           <StatBar label="Momo" value={moduleMins.totalMomo} max={140} color="bg-indigo-500" icon={<BookOpen className="w-3.5 h-3.5" />} />
@@ -114,7 +114,7 @@ export function StatsPage({ appData }: { appData: any }) {
       </div>
 
       {/* 防熬夜统计 */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
           <Moon className="w-4 h-4 text-slate-400" /> 7-Day Sleep Control
         </h2>

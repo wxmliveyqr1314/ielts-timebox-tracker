@@ -72,7 +72,7 @@ export function HistoryPage({ appData }: { appData: any }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
           <Calendar className="w-4 h-4" /> Last 7 Days Summary
         </h2>
@@ -111,7 +111,7 @@ export function HistoryPage({ appData }: { appData: any }) {
           const isExpanded = expandedDate === record.date;
           
           return (
-            <div key={record.date} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all">
+            <div key={record.date} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all wallpaper-surface">
               <div 
                 className="p-4 cursor-pointer hover:bg-slate-50 flex items-center justify-between"
                 onClick={() => toggleExpand(record.date)}
