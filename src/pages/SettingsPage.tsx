@@ -38,7 +38,7 @@ export function SettingsPage({
   };
   auth: ReturnType<typeof useSupabaseAuth>;
   wallpaper: UseWallpaperResult;
-  online?: boolean;
+  online: boolean;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 

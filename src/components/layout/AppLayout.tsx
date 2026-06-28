@@ -13,7 +13,7 @@ export function AppLayout({
   currentTab: string;
   onChangeTab: (t: string) => void;
   wallpaper?: UseWallpaperResult;
-  online?: boolean;
+  online: boolean;
 }) {
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-900 font-sans max-w-md mx-auto relative overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.05)] border-x border-slate-200">

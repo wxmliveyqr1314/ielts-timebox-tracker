@@ -5,7 +5,7 @@ import { UseWallpaperResult } from "../../hooks/useWallpaper";
 interface WallpaperSettingsProps {
   wallpaper: UseWallpaperResult;
   signedIn: boolean;
-  online?: boolean;
+  online: boolean;
 }
 
 export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSettingsProps) {
