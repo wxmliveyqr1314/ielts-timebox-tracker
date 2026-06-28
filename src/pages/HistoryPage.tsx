@@ -3,12 +3,13 @@ import { AppState, DailyRecord } from "../types";
 import { formatDateStr, sortRecordsByDateDesc } from "../utils/date";
 import { cn } from "../lib/utils";
 import { 
-  CheckCircle2, ChevronDown, ChevronUp, Calendar, Trash2
+  CheckCircle2, ChevronDown, ChevronUp, Calendar, Trash2, X, Clock3
 } from "lucide-react";
 import { 
   calculateColorStatus, isMomoTask, isMainTaskForDay, isSpeakingTask 
 } from "../utils/status";
 import { syncSleepControlTasks, syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
+import { formatFocusMode } from "../utils/display";
 
 // Helper to extract minutes
 function getRecordMetrics(record: DailyRecord) {
@@ -39,6 +40,25 @@ export function HistoryPage({ appData }: { appData: any }) {
     Object.values(appData.data.records as Record<string, DailyRecord>)
   );
 
+  function SummarySegment({ label, value, tone }: {
+    label: string;
+    value: number;
+    tone: "slate" | "green" | "yellow" | "red";
+  }) {
+    const tones = {
+      slate: "text-slate-600",
+      green: "text-emerald-600",
+      yellow: "text-amber-600",
+      red: "text-rose-600",
+    };
+    return (
+      <div className="flex-1 min-w-0 px-2 py-2 text-center">
+        <div className={`text-lg font-bold tabular-nums ${tones[tone]}`}>{value}</div>
+        <div className="text-[10px] font-semibold text-slate-500">{label}</div>
+      </div>
+    );
+  }
+
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
@@ -58,6 +78,7 @@ export function HistoryPage({ appData }: { appData: any }) {
   const greenDays = last7Days.filter(r => r.status === "green").length;
   const yellowDays = last7Days.filter(r => r.status === "yellow").length;
   const redDays = last7Days.filter(r => r.status === "red").length;
+  const pendingDays = last7Days.filter(r => r.status === "pending").length;
 
   const toggleExpand = (date: string) => {
     setExpandedDate(prev => prev === date ? null : date);
@@ -70,51 +91,56 @@ export function HistoryPage({ appData }: { appData: any }) {
     pending: "bg-slate-50 text-slate-500 border-slate-200",
   };
 
+  const statusBorderColors = {
+    green: "bg-emerald-500",
+    yellow: "bg-amber-500",
+    red: "bg-rose-500",
+    pending: "bg-slate-400",
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-          <Calendar className="w-4 h-4" /> Last 7 Days Summary
-        </h2>
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <div className="text-xl font-black text-slate-700">{last7Days.length}</div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">Days</div>
-          </div>
-          <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-100">
-            <div className="text-xl font-black text-emerald-600">{greenDays}</div>
-            <div className="text-[10px] uppercase font-bold text-emerald-500">Green</div>
-          </div>
-          <div className="bg-amber-50 p-2 rounded-xl border border-amber-100">
-            <div className="text-xl font-black text-amber-600">{yellowDays}</div>
-            <div className="text-[10px] uppercase font-bold text-amber-500">Yellow</div>
-          </div>
-          <div className="bg-rose-50 p-2 rounded-xl border border-rose-100">
-            <div className="text-xl font-black text-rose-600">{redDays}</div>
-            <div className="text-[10px] uppercase font-bold text-rose-500">Red</div>
-          </div>
+      <div className="wallpaper-surface rounded-lg border border-slate-200 p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-bold text-slate-800">History</h2>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Last 7 days</span>
+        </div>
+        <div className="flex bg-slate-50/50 rounded-lg border border-slate-200/70 overflow-hidden divide-x divide-slate-200/70">
+          <SummarySegment label="Days" value={last7Days.length} tone="slate" />
+          <SummarySegment label="Green" value={greenDays} tone="green" />
+          <SummarySegment label="Yellow" value={yellowDays} tone="yellow" />
+          <SummarySegment label="Red" value={redDays} tone="red" />
+          <SummarySegment label="Pending" value={pendingDays} tone="slate" />
         </div>
       </div>
 
       <div className="space-y-4">
         {deleteMessage && (
-          <div className="p-3 bg-slate-800 text-white text-xs rounded-xl flex items-center justify-between">
+          <div className="p-3 bg-slate-800 text-white text-sm rounded-lg flex items-center justify-between shadow-lg">
             <span>{deleteMessage}</span>
-            <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white">×</button>
+            <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white p-1" aria-label="Dismiss message"><X className="w-4 h-4" /></button>
           </div>
         )}
         {records.length === 0 && (
-          <div className="text-center py-10 text-slate-400 text-sm">No history records found.</div>
+          <div className="py-14 text-center wallpaper-surface rounded-lg border border-slate-200">
+            <Calendar className="w-5 h-5 mx-auto text-slate-400 mb-3" />
+            <p className="text-sm font-semibold text-slate-600">No history yet</p>
+            <p className="text-xs text-slate-500 mt-1">Completed days will appear here.</p>
+          </div>
         )}
         {records.map((record) => {
           const metrics = getRecordMetrics(record);
           const isExpanded = expandedDate === record.date;
           
           return (
-            <div key={record.date} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all wallpaper-surface">
-              <div 
-                className="p-4 cursor-pointer hover:bg-slate-50 flex items-center justify-between"
+            <div key={record.date} className="wallpaper-surface rounded-lg border border-slate-200 overflow-hidden shadow-sm flex flex-col relative">
+              <div className={cn("absolute left-0 top-0 bottom-0 w-1", statusBorderColors[record.status || "pending"])} />
+              <button
+                type="button"
+                className="w-full p-4 pl-5 text-left hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 flex items-center justify-between"
                 onClick={() => toggleExpand(record.date)}
+                aria-expanded={isExpanded}
+                aria-label={`${isExpanded ? "Collapse" : "Expand"} ${formatDateStr(record.date)}`}
               >
                 <div className="flex flex-col flex-1 pr-4 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -123,7 +149,7 @@ export function HistoryPage({ appData }: { appData: any }) {
                     {record.exercised && <span className="text-[10px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Workout</span>}
                   </div>
                   <div className="text-[10px] font-bold tracking-wider text-slate-400 uppercase flex flex-wrap gap-x-3 gap-y-1">
-                    <span>{record.dayType.replace("_", " ")}</span>
+                    <span>{formatFocusMode(record.dayType)}</span>
                     <span>{record.energyLevel} Energy</span>
                     <span className="text-indigo-500">Evening: {metrics.eveningFormalMinutes}m</span>
                     <span>Passive: {metrics.passiveMinutes}m</span>
@@ -141,7 +167,7 @@ export function HistoryPage({ appData }: { appData: any }) {
                   </div>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
                 </div>
-              </div>
+              </button>
 
               {isExpanded && (
                 <div className="border-t border-slate-100 p-4 bg-slate-50/50">
@@ -192,44 +218,47 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
+      <div className="space-y-0">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-2">Tasks</h3>
         {record.tasks.map(task => (
-          <div key={task.id} className="flex flex-col bg-white p-3 rounded-xl border border-slate-200 shadow-sm gap-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+          <div key={task.id} className="py-3 border-b border-slate-200/70 last:border-b-0 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <button 
                   onClick={() => handleTaskUpdate(task.id, "completed", !task.completed)}
-                  className={cn("w-5 h-5 shrink-0 rounded flex items-center justify-center border transition-colors", task.completed ? "bg-emerald-500 border-emerald-600 text-white" : "bg-slate-100 border-slate-300")}
+                  className={cn("w-5 h-5 shrink-0 rounded flex items-center justify-center border transition-colors", task.completed ? "bg-emerald-500 border-emerald-600 text-white" : "bg-white border-slate-300")}
+                  aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
                 >
                   {task.completed && <CheckCircle2 className="w-3.5 h-3.5" />}
                 </button>
-                <span className={cn("text-sm font-semibold truncate", task.completed ? "text-slate-400 line-through" : "text-slate-700")}>
+                <span className={cn("text-sm font-semibold break-words leading-snug", task.completed ? "text-slate-400 line-through" : "text-slate-700")}>
                   {task.title}
                 </span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">Plan {task.plannedMinutes}m</span>
-                {task.category !== "sleep_control" ? (
-                  <input 
-                    type="number"
-                    min="0"
-                    className="w-12 text-center text-xs font-mono py-1 border rounded-md focus:outline-none focus:border-indigo-500"
-                    value={task.actualMinutes || ""}
-                    placeholder="0"
-                    onChange={(e) => handleTaskUpdate(task.id, "actualMinutes", parseInt(e.target.value) || 0)}
-                  />
-                ) : (
-                  <div className="w-12 text-center text-xs font-mono py-1 border border-transparent text-slate-300">
-                    --
-                  </div>
-                )}
+                <div className="w-14 shrink-0">
+                  {task.category !== "sleep_control" ? (
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full text-center text-xs font-mono py-1 border border-slate-200 rounded-md focus:outline-none focus:border-indigo-500 bg-white/80"
+                      value={task.actualMinutes || ""}
+                      placeholder="0"
+                      onChange={(e) => handleTaskUpdate(task.id, "actualMinutes", parseInt(e.target.value) || 0)}
+                    />
+                  ) : (
+                    <div className="w-full text-center text-xs font-mono py-1 border border-transparent text-slate-400">
+                      --
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <input 
               type="text"
               placeholder="Task notes (optional)"
-              className="w-full text-xs p-2 bg-slate-50 border border-slate-100 rounded-md focus:outline-none focus:bg-white focus:border-indigo-300"
+              className="w-full text-xs p-2 bg-white/50 border border-slate-200/70 rounded-md focus:outline-none focus:bg-white focus:border-indigo-300"
               value={task.notes || ""}
               onChange={(e) => handleTaskUpdate(task.id, "notes", e.target.value)}
             />
