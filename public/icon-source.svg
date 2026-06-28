@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">TimeBox</title>
+  <defs>
+    <linearGradient id="base" x1="120" y1="80" x2="900" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3829D9"/>
+      <stop offset="1" stop-color="#695CFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#base)"/>
+  <rect x="132" y="132" width="760" height="760" rx="152" fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="32"/>
+  <path d="M260 278H764V390H574V748H450V390H260V278Z" fill="#FFFFFF"/>
+  <circle cx="790" cy="230" r="54" fill="#F4C95D"/>
+</svg>
