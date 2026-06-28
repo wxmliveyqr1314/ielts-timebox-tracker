@@ -28,13 +28,13 @@ test("publishes the approved install manifest and icons", async ({ request }) =>
 test("provides offline application shell and retains local data", async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedAppState(page);
-  
+
   await page.goto("/");
   await seedWallpaper(page);
   await page.reload();
 
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.ready));
-  
+
   // Reload once online so navigator.serviceWorker.controller is truthy
   await page.reload();
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
@@ -61,17 +61,17 @@ test("provides offline application shell and retains local data", async ({ page,
     if (await sendMagicLinkBtn.count() > 0) {
       await expect(sendMagicLinkBtn).toBeDisabled();
     }
-    
+
     const verifyCodeBtn = page.getByRole("button", { name: "Verify Code" });
     if (await verifyCodeBtn.count() > 0) {
       await expect(verifyCodeBtn).toBeDisabled();
     }
-    
+
     const syncNowBtn = page.getByRole("button", { name: "Sync now" });
     if (await syncNowBtn.count() > 0) {
       await expect(syncNowBtn).toBeDisabled();
     }
-    
+
     await expect(page.getByLabel("Choose wallpaper image")).toBeDisabled();
     await expect(page.getByRole("button", { name: "Upload & Apply" })).toBeDisabled();
 

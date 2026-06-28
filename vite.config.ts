@@ -18,7 +18,7 @@ export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
     plugins: [
-      react(), 
+      react(),
       tailwindcss(),
       VitePWA({
         registerType: "autoUpdate",

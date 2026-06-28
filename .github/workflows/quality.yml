@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify PWA icons
+        run: npm run icons:check
+
       - name: Unit tests
         run: npm test
 

@@ -52,7 +52,7 @@ describe("SettingsPage offline guards", () => {
     );
 
     expect(screen.getByText("Cloud account and sync actions are unavailable offline. Local data remains available.")).toBeDefined();
-    
+
     const emailInput = screen.getByPlaceholderText("Enter your email");
     const sendBtn = screen.getByRole("button", { name: "Send Magic Link" }) as HTMLButtonElement;
     const otpInput = screen.getByPlaceholderText("6-digit code (if you didn't click the link)");

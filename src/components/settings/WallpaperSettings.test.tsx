@@ -111,15 +111,15 @@ describe("WallpaperSettings", () => {
         online={false}
       />
     );
-    
+
     expect(screen.getByText("Wallpaper cloud controls are unavailable offline. Your cached wallpaper remains visible.")).toBeDefined();
-    
+
     const fileInput = screen.getByLabelText(/choose wallpaper image/i) as HTMLInputElement;
     const uploadBtn = screen.getByRole("button", { name: /upload & apply/i }) as HTMLButtonElement;
     const enableCheckbox = screen.getByLabelText(/enable wallpaper/i) as HTMLInputElement;
     const slider = screen.getByLabelText(/Overlay opacity/i) as HTMLInputElement;
     const removeBtn = screen.getByRole("button", { name: /remove wallpaper/i }) as HTMLButtonElement;
-    
+
     expect(fileInput.disabled).toBe(true);
     expect(uploadBtn.disabled).toBe(true);
     expect(enableCheckbox.disabled).toBe(true);
