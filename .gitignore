@@ -8,3 +8,11 @@ coverage/
 !.env.example
 
 .superpowers/
+
+playwright-report/
+test-results/
+blob-report/
+qa.cjs
+*-mobile.png
+*-tablet.png
+*-desktop.png
