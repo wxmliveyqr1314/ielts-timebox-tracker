@@ -5,9 +5,10 @@ import { UseWallpaperResult } from "../../hooks/useWallpaper";
 interface WallpaperSettingsProps {
   wallpaper: UseWallpaperResult;
   signedIn: boolean;
+  online?: boolean;
 }
 
-export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProps) {
+export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSettingsProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
@@ -43,7 +44,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !signedIn) return;
+    if (!selectedFile || !signedIn || online === false) return;
     const success = await wallpaper.uploadAndApply(selectedFile);
     if (success) {
       setSelectedFile(null);
@@ -52,6 +53,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
   };
 
   const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (online === false) return;
     const val = parseInt(e.target.value, 10);
     setLocalOpacity(val);
 
@@ -62,11 +64,13 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
   };
 
   const handleRemove = async () => {
+    if (online === false) return;
     await wallpaper.remove();
     setShowRemoveDialog(false);
   };
 
   const isBusy = Boolean(wallpaper.busy);
+  const cloudControlsDisabled = isBusy || !signedIn || online === false;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-6 wallpaper-surface">
@@ -74,6 +78,12 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
         <Image className="w-5 h-5 text-indigo-500" />
         <h3 className="text-lg font-semibold text-slate-800 wallpaper-heading">Cloud Wallpaper</h3>
       </div>
+
+      {online === false && (
+        <div className="rounded-lg border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-500/80 mb-4 font-semibold">
+          Wallpaper cloud controls are unavailable offline. Your cached wallpaper remains visible.
+        </div>
+      )}
 
       {wallpaper.notice && (
         <div
@@ -109,7 +119,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
                 type="checkbox"
                 checked={wallpaper.active}
                 onChange={(e) => wallpaper.setEnabled(e.target.checked)}
-                disabled={isBusy || !signedIn}
+                disabled={cloudControlsDisabled}
                 className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
               <span className="text-sm font-medium text-slate-700">Enable wallpaper</span>
@@ -117,7 +127,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
 
             <button
               onClick={() => setShowRemoveDialog(true)}
-              disabled={isBusy || !signedIn}
+              disabled={cloudControlsDisabled}
               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1 disabled:opacity-50"
             >
               <Trash2 className="w-4 h-4" />
@@ -137,7 +147,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
                 step="1"
                 value={localOpacity}
                 onChange={handleOpacityChange}
-                disabled={!wallpaper.active || isBusy || !signedIn}
+                disabled={!wallpaper.active || cloudControlsDisabled}
                 className="w-full accent-indigo-600"
               />
             </div>
@@ -158,11 +168,11 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
             accept="image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
             className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-50"
-            disabled={isBusy || !signedIn}
+            disabled={cloudControlsDisabled}
           />
           <button
             onClick={handleUpload}
-            disabled={!selectedFile || !signedIn || isBusy}
+            disabled={!selectedFile || cloudControlsDisabled}
             className="flex items-center justify-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors w-full sm:w-auto"
           >
             {isBusy && wallpaper.busy === "upload" ? "Uploading..." : (
@@ -198,7 +208,7 @@ export function WallpaperSettings({ wallpaper, signedIn }: WallpaperSettingsProp
               <button
                 onClick={handleRemove}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2"
-                disabled={isBusy}
+                disabled={cloudControlsDisabled}
               >
                 {isBusy && wallpaper.busy === "remove" ? "Removing..." : "Remove"}
               </button>

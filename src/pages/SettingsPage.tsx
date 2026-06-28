@@ -28,6 +28,7 @@ export function SettingsPage({
   appData,
   auth,
   wallpaper,
+  online,
 }: {
   appData: {
     data: AppState;
@@ -37,6 +38,7 @@ export function SettingsPage({
   };
   auth: ReturnType<typeof useSupabaseAuth>;
   wallpaper: UseWallpaperResult;
+  online?: boolean;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,6 +80,10 @@ export function SettingsPage({
   }, [cooldown]);
 
   const handleMagicLink = async () => {
+    if (!online) {
+      setAuthNotice({ type: "error", message: "You are offline. Reconnect to use cloud account features." });
+      return;
+    }
     if (!authEmail) return;
     const { error } = await sendMagicLink(authEmail);
     if (error) {
@@ -89,6 +95,10 @@ export function SettingsPage({
   };
 
   const handleVerifyOtp = async () => {
+    if (!online) {
+      setAuthNotice({ type: "error", message: "You are offline. Reconnect to use cloud account features." });
+      return;
+    }
     if (!authEmail) return;
     if (!authOtp || authOtp.length !== 6 || !/^\d+$/.test(authOtp)) {
       setAuthNotice({ type: "error", message: "Please enter the 6-digit code from your email." });
@@ -112,6 +122,10 @@ export function SettingsPage({
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const handleSync = async () => {
+    if (!online) {
+      setSyncResult("You are offline. Local data is safe; reconnect before syncing.");
+      return;
+    }
     if (!configured) {
       setSyncResult(`Cloud sync is not configured.`);
       return;
@@ -314,6 +328,12 @@ export function SettingsPage({
               Manual sync is available. Daily records sync only when you tap Sync now.
             </p>
 
+            {online === false && (
+              <div className="rounded-lg border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-300 mb-4">
+                Cloud account and sync actions are unavailable offline. Local data remains available.
+              </div>
+            )}
+
             {!configured ? (
               <div className="text-xs text-rose-400 p-3 bg-rose-400/10 rounded-lg">
                 Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
@@ -354,8 +374,8 @@ export function SettingsPage({
                 <div className="flex flex-col sm:flex-row gap-2 mt-2">
                   <button
                     onClick={triggerSync}
-                    disabled={isSyncing}
-                    className="flex-1 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-bold transition-colors"
+                    disabled={isSyncing || !online}
+                    className="flex-1 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
                   >
                     {isSyncing ? "Syncing..." : "Sync now"}
                   </button>
@@ -382,7 +402,7 @@ export function SettingsPage({
                 </div>
                 <button
                   onClick={handleMagicLink}
-                  disabled={loading || !authEmail || cooldown > 0}
+                  disabled={loading || !authEmail || cooldown > 0 || !online}
                   className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   {loading ? "Sending..." : cooldown > 0 ? `Send again in ${cooldown}s` : "Send Magic Link"}
@@ -405,7 +425,7 @@ export function SettingsPage({
                 </div>
                 <button
                   onClick={handleVerifyOtp}
-                  disabled={loading || !authEmail || authOtp.length !== 6}
+                  disabled={loading || !authEmail || authOtp.length !== 6 || !online}
                   className="w-full py-2 bg-emerald-600/80 hover:bg-emerald-500/80 disabled:opacity-50 disabled:hover:bg-emerald-600/80 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   {loading ? "Verifying..." : "Verify Code"}
@@ -415,7 +435,7 @@ export function SettingsPage({
           </div>
         </div>
 
-        <WallpaperSettings wallpaper={wallpaper} signedIn={!!session} />
+        <WallpaperSettings wallpaper={wallpaper} signedIn={!!session} online={online} />
 
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 mt-8">
           Data Health
