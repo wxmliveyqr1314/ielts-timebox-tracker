@@ -2,10 +2,12 @@
 
 ## Current Release
 
-- Version: v1.9.0
-- Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4
+- Version: v2.0.0
+- Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
+
+The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 
 ## Product Areas
 
@@ -15,13 +17,16 @@
 - Supabase authentication and manual cloud synchronization
 - Local-first cloud wallpaper
 - Data health and JSON backup tools
+- Offline PWA shell with local-first features (cloud actions disabled while offline)
 
 ## Quality Commands
 
 - `npm test`: Vitest unit and component tests
 - `npm run typecheck`: TypeScript validation
-- `npm run build`: production Vite build
-- `npm run test:e2e`: Chromium browser smoke tests after a build
+- `npm run icons:generate`: Deterministic generation of PWA icons using Sharp
+- `npm run icons:check`: Validation of PWA icon dimensions
+- `npm run build`: production Vite build (emits manifest and service worker)
+- `npm run test:e2e`: Chromium browser smoke tests and PWA offline Playwright coverage
 - `npm run check`: unit tests, type checking, and production build
 
 ## Continuous Integration
@@ -32,6 +37,8 @@
 
 - LocalStorage remains the primary local data source.
 - Cloud synchronization is manual only.
+- `vite-plugin-pwa` precaches only the application shell and static assets.
+- Supabase API traffic is not runtime-cached.
 - Daily-record deletion uses tombstones.
 - Wallpaper blobs are isolated in IndexedDB and cloud paths are user-owned.
 - Never commit `.env` files, service-role keys, Playwright artifacts, or exported user data.
@@ -41,6 +48,7 @@
 - Real email delivery, authentication rate limits, production RLS, and multi-device conflicts require manual verification.
 - The browser smoke suite uses Chromium only.
 - Supabase Free projects may pause after inactivity.
+- Real-device installation remains a manual release check.
 
 ## Development Workflow
 

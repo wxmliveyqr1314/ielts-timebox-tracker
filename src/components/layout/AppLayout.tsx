@@ -7,11 +7,13 @@ export function AppLayout({
   currentTab,
   onChangeTab,
   wallpaper,
+  online,
 }: {
   children: ReactNode;
   currentTab: string;
   onChangeTab: (t: string) => void;
   wallpaper?: UseWallpaperResult;
+  online: boolean;
 }) {
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-900 font-sans max-w-md mx-auto relative overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.05)] border-x border-slate-200">
@@ -36,6 +38,11 @@ export function AppLayout({
           className="relative z-10 p-5 h-full overflow-y-auto pb-24"
           data-wallpaper-active={wallpaper?.active ? "true" : "false"}
         >
+          {online === false && (
+            <div role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              Offline. Local records remain available; cloud actions are paused.
+            </div>
+          )}
           {children}
         </div>
       </main>
