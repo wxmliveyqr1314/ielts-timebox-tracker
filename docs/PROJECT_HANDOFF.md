@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.0.0
+- Version: v2.1.0
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -11,13 +11,67 @@ The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 
 ## Product Areas
 
-- Daily planning and Focus Mode recommendation
+- Dynamic Daily planning and Focus Mode recommendation
 - History editing and safe deletion
 - Stats and streak reporting
 - Supabase authentication and manual cloud synchronization
 - Local-first cloud wallpaper
 - Data health and JSON backup tools
 - Offline PWA shell with local-first features (cloud actions disabled while offline)
+
+## Dynamic Daily Planning (v2.1)
+
+Daily setup now produces an explainable, capacity-aware plan from Day Context, workout state, Energy Level, Focus Mode, optional focused minutes, and real study completed before generation. Every new plan persists a versioned `planSnapshot`; legacy records without a snapshot continue to render and calculate status through the legacy path.
+
+### Module ownership
+
+- `src/planning/taskRegistry.ts`: immutable task definitions, categories, credit group, capacity behavior, status role, minimums, and increments.
+- `src/planning/focusProfiles.ts`: versioned Low/Normal/High task composition for Dictation, Reading, Speaking, and Recovery.
+- `src/planning/planEngine.ts`: pure input normalization, matching credit, capacity trimming, deterministic task creation, and summary generation.
+- `src/planning/planProgress.ts`: regeneration preview, stable task matching, and preservation of actual minutes, completion, notes, and removed real progress.
+- `src/utils/status.ts`: dispatches records with a snapshot to dynamic status calculation and records without one to the legacy calculation.
+- `src/utils/stats.ts`: counts completed-earlier Momo, dictation, reading, and passive minutes exactly once alongside generated-task actual minutes.
+- `src/utils/dataHealth.ts`: validates optional plan snapshots read-only and never rewrites user data.
+
+### Capacity defaults
+
+| Day context | Workout | Focused capacity |
+| --- | --- | ---: |
+| Workday | No | 270 minutes |
+| Workday | Yes | 210 minutes |
+| Rest day | No | 330 minutes |
+| Rest day | Yes | 270 minutes |
+
+A manual value overrides the default and is clamped to `0..480` minutes.
+
+### Focus-mode totals
+
+| Focus mode | Low | Normal | High |
+| --- | ---: | ---: | ---: |
+| Dictation | 120 | 175 | 200 |
+| Reading | 135 | 190 | 220 |
+| Speaking | 90 | 130 | 150 |
+| Recovery | 45 | 60 | 60 |
+
+Passive listening is a separate 60-minute reference. It can exceed 60 minutes, does not consume focused capacity, does not reduce focused tasks, and does not affect Green/Yellow/Red.
+
+### Completed-earlier credit and regeneration
+
+- Momo, dictation, and reading minutes reduce only their matching generated group, one minute for one minute.
+- Passive minutes reduce only the displayed listening reference.
+- Excess and nonmatching minutes still count as real module study but never replace another category.
+- Matching credit is applied before priority-based capacity trimming.
+- Regeneration always shows a preview and requires confirmation.
+- Stable `entryId` and `definitionId` metadata preserve task progress. Removed tasks with real progress move to `Earlier progress` and do not remain requirements.
+
+### Adding a future task
+
+1. Add one immutable definition to `TASK_REGISTRY` with a stable ID, category, capacity kind, status role, minimum, and increment.
+2. Reference that definition from the appropriate versioned entries in `focusProfiles.ts`, using a stable `entryId`, planned minutes, priority, and optional credit order.
+3. Add registry/profile tests and exact plan-engine totals.
+4. Extend `TaskCategory` and reporting tests only when the task introduces a genuinely new reporting category.
+
+Normal task additions must not add title-string branches to `planEngine.ts`.
 
 ## Quality Commands
 
@@ -49,6 +103,7 @@ The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 - The browser smoke suite uses Chromium only.
 - Supabase Free projects may pause after inactivity.
 - Real-device installation remains a manual release check.
+- Dynamic planning intentionally excludes AI-generated plans, calendar/workweek inference, cross-category substitution, automatic regeneration, passive-listening enforcement, and recalculation of old historical statuses.
 
 ## Development Workflow
 
