@@ -59,6 +59,9 @@ describe("focus profiles", () => {
 
       expect(highOnly).toHaveLength(1);
       expect(highOnly[0].optional).toBe(true);
+      expect(getTaskDefinition(highOnly[0].definitionId).statusRole).toBe(
+        "required",
+      );
     }
   });
 
