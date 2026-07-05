@@ -1,6 +1,43 @@
 import { AppState, DataHealthReport, DataHealthIssue, DataHealthIssueSeverity } from "../types";
 import { normalizeDateString } from "./date";
 
+const PLAN_SUMMARY_FIELDS = [
+  "standardCoreMinutes",
+  "energyAdjustedCoreMinutes",
+  "appliedCoreCreditMinutes",
+  "extraCompletedMinutes",
+  "capacityMinutes",
+  "capacityTrimmedMinutes",
+  "eveningCoreTargetMinutes",
+  "passiveReferenceMinutes",
+  "passiveReferenceRemainingMinutes",
+] as const;
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
+}
+
+function normalizeBonus(value: unknown) {
+  const bonus = isObject(value) ? value : {};
+  return {
+    passiveListeningMinutes: bonus.passiveListeningMinutes ?? 0,
+    momoMinutes: bonus.momoMinutes ?? 0,
+    dictationMinutes: bonus.dictationMinutes ?? 0,
+    readingMinutes: bonus.readingMinutes ?? 0,
+  };
+}
+
+function planInputsMatch(record: Record<string, any>, input: any): boolean {
+  return (
+    input.dayContext === (record.dayContext ?? "workday") &&
+    input.exercised === record.exercised &&
+    input.energyLevel === record.energyLevel &&
+    input.dayType === record.dayType &&
+    input.availableFocusedMinutes === record.availableFocusedMinutes &&
+    JSON.stringify(normalizeBonus(input.workdayBonus)) === JSON.stringify(normalizeBonus(record.workdayBonus))
+  );
+}
+
 export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
   const issues: DataHealthIssue[] = [];
   let errors = 0;
@@ -86,6 +123,59 @@ export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
           addIssue("error", "TASK_INVALID_PLANNED_MINUTES", `Task '${task.title || index}' has invalid plannedMinutes`, key);
         }
       });
+    }
+
+    if (record.planSnapshot !== undefined) {
+      const snapshot = record.planSnapshot;
+      const structurallyValid =
+        isObject(snapshot) &&
+        typeof snapshot.engineVersion === "number" &&
+        typeof snapshot.generatedAt === "string" &&
+        !Number.isNaN(Date.parse(snapshot.generatedAt)) &&
+        isObject(snapshot.input) &&
+        Array.isArray(snapshot.credits) &&
+        isObject(snapshot.summary) &&
+        Array.isArray(snapshot.adjustmentCodes);
+
+      if (!structurallyValid) {
+        addIssue(
+          "error",
+          "PLAN_SNAPSHOT_MISSING_FIELDS",
+          "Plan snapshot is missing required fields or contains an invalid generatedAt value",
+          key,
+        );
+      } else {
+        if (snapshot.engineVersion !== 1) {
+          addIssue(
+            "error",
+            "INVALID_PLAN_ENGINE_VERSION",
+            `Unsupported plan engine version '${String(snapshot.engineVersion)}'`,
+            key,
+          );
+        }
+
+        const invalidSummary = PLAN_SUMMARY_FIELDS.some((field) => {
+          const value = snapshot.summary[field];
+          return typeof value !== "number" || !Number.isFinite(value) || value < 0;
+        });
+        if (invalidSummary) {
+          addIssue(
+            "error",
+            "INVALID_PLAN_SUMMARY",
+            "Plan snapshot summary contains a missing, negative, or non-finite value",
+            key,
+          );
+        }
+
+        if (!planInputsMatch(record, snapshot.input)) {
+          addIssue(
+            "warning",
+            "PLAN_INPUT_MISMATCH",
+            "Record planning inputs differ from the inputs saved with its generated plan",
+            key,
+          );
+        }
+      }
     }
   });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { analyzeAppDataHealth } from "./dataHealth";
 import { AppState, DailyRecord } from "../types";
+import { buildDailyPlan } from "../planning/planEngine";
 
 function createValidRecord(date: string): DailyRecord {
   return {
@@ -18,6 +19,31 @@ function createValidRecord(date: string): DailyRecord {
     status: "pending",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  };
+}
+
+function createDynamicRecord(date: string): DailyRecord {
+  const record = createValidRecord(date);
+  const result = buildDailyPlan({
+    dayContext: "workday",
+    exercised: false,
+    energyLevel: "normal",
+    dayType: "listening_focus",
+    workdayBonus: {
+      passiveListeningMinutes: 0,
+      momoMinutes: 0,
+      dictationMinutes: 0,
+      readingMinutes: 0,
+    },
+  });
+  return {
+    ...record,
+    dayContext: "workday",
+    tasks: result.tasks,
+    planSnapshot: {
+      ...result.snapshot,
+      generatedAt: `${date}T12:00:00.000Z`,
+    },
   };
 }
 
@@ -130,5 +156,47 @@ describe("analyzeAppDataHealth", () => {
     };
     const report = analyzeAppDataHealth(appData);
     expect(report.issues.some(i => i.code === "INVALID_DELETED_RECORD_KEY")).toBe(true);
+  });
+
+  it("keeps legacy records without a plan snapshot healthy", () => {
+    const record = createValidRecord("2026-05-09");
+    const report = analyzeAppDataHealth({ records: { [record.date]: record } });
+    expect(report.ok).toBe(true);
+    expect(report.issues.some((issue) => issue.code.startsWith("PLAN_"))).toBe(false);
+  });
+
+  it("keeps a valid dynamic plan snapshot healthy", () => {
+    const record = createDynamicRecord("2026-05-09");
+    const report = analyzeAppDataHealth({ records: { [record.date]: record } });
+    expect(report.ok).toBe(true);
+  });
+
+  it("identifies an unsupported planning engine version", () => {
+    const record = createDynamicRecord("2026-05-09");
+    (record.planSnapshot as any).engineVersion = 99;
+    const report = analyzeAppDataHealth({ records: { [record.date]: record } });
+    expect(report.issues.some((issue) => issue.code === "INVALID_PLAN_ENGINE_VERSION")).toBe(true);
+  });
+
+  it("identifies negative values in a present plan summary", () => {
+    const record = createDynamicRecord("2026-05-09");
+    record.planSnapshot!.summary.eveningCoreTargetMinutes = -1;
+    const report = analyzeAppDataHealth({ records: { [record.date]: record } });
+    expect(report.issues.some((issue) => issue.code === "INVALID_PLAN_SUMMARY")).toBe(true);
+  });
+
+  it("warns when record plan inputs differ from the saved snapshot", () => {
+    const record = createDynamicRecord("2026-05-09");
+    record.dayContext = "rest_day";
+    const report = analyzeAppDataHealth({ records: { [record.date]: record } });
+    const issue = report.issues.find((candidate) => candidate.code === "PLAN_INPUT_MISMATCH");
+    expect(issue?.severity).toBe("warning");
+  });
+
+  it("identifies missing fields inside a present plan snapshot", () => {
+    const record = createDynamicRecord("2026-05-09");
+    delete (record.planSnapshot as any).summary;
+    const report = analyzeAppDataHealth({ records: { [record.date]: record } });
+    expect(report.issues.some((issue) => issue.code === "PLAN_SNAPSHOT_MISSING_FIELDS")).toBe(true);
   });
 });
