@@ -1,37 +1,48 @@
-import { DailyRecord } from "../types";
+import type { DailyRecord, TaskCheckItem } from "../types";
 import { calculateColorStatus } from "./status";
+
+function isStoppedOnTimeTask(task: TaskCheckItem): boolean {
+  return (
+    task.category === "sleep_control" &&
+    (task.definitionId === "sleep-stop-heavy" ||
+      task.entryId === "control:sleep-stop-heavy" ||
+      task.title.includes("22:30"))
+  );
+}
+
+function isNoCompensationTask(task: TaskCheckItem): boolean {
+  return (
+    task.category === "sleep_control" &&
+    (task.definitionId === "sleep-no-compensation" ||
+      task.entryId === "control:sleep-no-compensation" ||
+      task.title.includes("No compensatory") ||
+      task.title.includes("没有补偿"))
+  );
+}
 
 export function syncSleepControlTasks(
   record: DailyRecord,
   updates: {
     stoppedAfter2230?: boolean;
     noCompensatoryStayingUp?: boolean;
-  }
+  },
 ): DailyRecord {
   const nextRecord = {
     ...record,
     ...updates,
     tasks: record.tasks.map((task) => {
-      if (task.category !== "sleep_control") return task;
-
       if (
         typeof updates.stoppedAfter2230 === "boolean" &&
-        task.title.includes("22:30")
+        isStoppedOnTimeTask(task)
       ) {
-        return {
-          ...task,
-          completed: updates.stoppedAfter2230,
-        };
+        return { ...task, completed: updates.stoppedAfter2230 };
       }
 
       if (
         typeof updates.noCompensatoryStayingUp === "boolean" &&
-        (task.title.includes("补偿性熬夜") || task.title.includes("没有补偿"))
+        isNoCompensationTask(task)
       ) {
-        return {
-          ...task,
-          completed: updates.noCompensatoryStayingUp,
-        };
+        return { ...task, completed: updates.noCompensatoryStayingUp };
       }
 
       return task;
@@ -46,19 +57,10 @@ export function syncSleepControlTasks(
 }
 
 export function syncRecordFieldsFromSleepControlTasks(
-  record: DailyRecord
+  record: DailyRecord,
 ): DailyRecord {
-  const stoppedTask = record.tasks.find(
-    (task) =>
-      task.category === "sleep_control" &&
-      task.title.includes("22:30")
-  );
-
-  const noStayingUpTask = record.tasks.find(
-    (task) =>
-      task.category === "sleep_control" &&
-      (task.title.includes("补偿性熬夜") || task.title.includes("没有补偿"))
-  );
+  const stoppedTask = record.tasks.find(isStoppedOnTimeTask);
+  const noStayingUpTask = record.tasks.find(isNoCompensationTask);
 
   const nextRecord = {
     ...record,

@@ -2,30 +2,32 @@ import { useState, useEffect } from "react";
 import {
   DailyRecord,
   DayType,
+  DayContext,
   EnergyLevel,
-  TaskCheckItem,
-  DayStatus,
   WorkdayBonus,
+  DailyPlanInput,
 } from "../types";
 import { getTodayStr, formatDateStr } from "../utils/date";
 import { calculateColorStatus } from "../utils/status";
-import { generateDailyPlan } from "../utils/tasks";
+import { buildDailyPlan, getDefaultFocusedMinutes } from "../planning/planEngine";
+import { mergePlanProgress, previewPlanDifference } from "../planning/planProgress";
 import { getRecommendedFocusMode } from "../utils/focusRecommendation";
 import {
   CheckCircle2,
   Dumbbell,
   Zap,
   CheckSquare,
-  RotateCcw,
   Settings2,
-  AlertTriangle,
   Trash2,
   X,
   Sparkles,
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { subDays, format } from "date-fns";
+import { format } from "date-fns";
 import { syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
+import { PlanSummary } from "../components/daily/PlanSummary";
+import { PlanSections } from "../components/daily/PlanSections";
+import { RegenerationPreview } from "../components/daily/RegenerationPreview";
 
 interface DailyPageProps {
   appData: any; // ReturnType of useAppData
@@ -35,8 +37,6 @@ export function DailyPage({ appData }: DailyPageProps) {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const today = getTodayStr();
   const record: DailyRecord | undefined = appData.data.records[today];
-  const yesterdayStr = format(subDays(new Date(), 1), "yyyy-MM-dd");
-  const yesterdayRecord = appData.data.records[yesterdayStr];
 
   useEffect(() => {
     if (deleteMessage) {
@@ -64,7 +64,6 @@ export function DailyPage({ appData }: DailyPageProps) {
         <SetupDaily
           today={today}
           updateRecord={appData.updateRecord}
-          yesterdayRecord={yesterdayRecord}
           records={appData.data.records}
         />
       ) : (
@@ -73,7 +72,6 @@ export function DailyPage({ appData }: DailyPageProps) {
           record={record}
           updateRecord={appData.updateRecord}
           deleteRecord={handleDelete}
-          yesterdayRecord={yesterdayRecord}
         />
       )}
     </div>
@@ -82,6 +80,8 @@ export function DailyPage({ appData }: DailyPageProps) {
 
 // --- Shared Config Form --- //
 function ConfigForm({
+  dayContext,
+  setDayContext,
   exercised,
   setExercised,
   energyLevel,
@@ -90,7 +90,11 @@ function ConfigForm({
   setDayType,
   workdayBonus,
   setWorkdayBonus,
+  availableFocusedMinutes,
+  setAvailableFocusedMinutes,
 }: {
+  dayContext: DayContext;
+  setDayContext: (value: DayContext) => void;
   exercised: boolean;
   setExercised: (v: boolean) => void;
   energyLevel: EnergyLevel;
@@ -99,9 +103,39 @@ function ConfigForm({
   setDayType: (v: DayType) => void;
   workdayBonus: WorkdayBonus;
   setWorkdayBonus: (v: WorkdayBonus) => void;
+  availableFocusedMinutes?: number;
+  setAvailableFocusedMinutes: (value?: number) => void;
 }) {
+  const defaultFocusedMinutes = getDefaultFocusedMinutes(dayContext, exercised);
+
   return (
     <div className="space-y-6">
+      <div>
+        <label className="mb-3 block text-sm font-semibold text-slate-700">
+          Day context
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { value: "workday" as const, label: "Workday" },
+            { value: "rest_day" as const, label: "Rest day" },
+          ].map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              onClick={() => setDayContext(option.value)}
+              className={cn(
+                "rounded-xl border py-2.5 text-sm font-bold transition-all",
+                dayContext === option.value
+                  ? "border-2 border-indigo-200 bg-indigo-50 text-indigo-600"
+                  : "border-slate-200 text-slate-500 hover:bg-slate-50",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div>
         <label className="text-sm font-semibold text-slate-700 block mb-3 flex items-center gap-2">
           <Dumbbell className="w-4 h-4 text-slate-400" /> Workout Completed?
@@ -187,9 +221,12 @@ function ConfigForm({
 
       <div>
         <label className="text-sm font-semibold text-slate-700 block mb-3 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-slate-400" /> Workday Bonus
-          (Mins)
+          <CheckCircle2 className="w-4 h-4 text-slate-400" />
+          {dayContext === "workday" ? "Completed during workday" : "Completed earlier today"}
         </label>
+        <p className="mb-3 text-xs leading-relaxed text-slate-500">
+          Enter minutes already completed before generating this plan. Matching focused work reduces tonight's target.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1 font-bold">
@@ -265,6 +302,28 @@ function ConfigForm({
           </div>
         </div>
       </div>
+
+      <div>
+        <label htmlFor="available-focused-minutes" className="block text-sm font-semibold text-slate-700">
+          Focused minutes available tonight
+        </label>
+        <p className="mt-1 text-xs text-slate-500">
+          Optional. Leave blank to use the default: {defaultFocusedMinutes} minutes.
+        </p>
+        <input
+          id="available-focused-minutes"
+          type="number"
+          min="0"
+          max="480"
+          value={availableFocusedMinutes ?? ""}
+          onChange={(event) => {
+            const value = event.target.value;
+            setAvailableFocusedMinutes(value === "" ? undefined : Number.parseInt(value, 10));
+          }}
+          placeholder={String(defaultFocusedMinutes)}
+          className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 p-2 text-center font-mono text-sm"
+        />
+      </div>
     </div>
   );
 }
@@ -273,20 +332,19 @@ function ConfigForm({
 function SetupDaily({
   today,
   updateRecord,
-  yesterdayRecord,
   records,
 }: {
   today: string;
   updateRecord: any;
-  yesterdayRecord?: DailyRecord;
   records: Record<string, DailyRecord>;
 }) {
   const [recommendation] = useState(() => getRecommendedFocusMode(records, today));
-  const isYesterdayRed = yesterdayRecord?.status === "red";
 
+  const [dayContext, setDayContext] = useState<DayContext>("workday");
   const [exercised, setExercised] = useState(false);
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>("normal");
   const [dayType, setDayType] = useState<DayType>(recommendation.recommendedMode);
+  const [availableFocusedMinutes, setAvailableFocusedMinutes] = useState<number | undefined>();
   const [workdayBonus, setWorkdayBonus] = useState<WorkdayBonus>({
     passiveListeningMinutes: 0,
     momoMinutes: 0,
@@ -295,13 +353,16 @@ function SetupDaily({
   });
 
   const handleStart = () => {
-    const tasks = generateDailyPlan({
+    const input: DailyPlanInput = {
       dayType,
       exercised,
       energyLevel,
+      dayContext,
       workdayBonus,
-      yesterdayStatus: isYesterdayRed ? "red" : "green",
-    });
+      ...(availableFocusedMinutes !== undefined ? { availableFocusedMinutes } : {}),
+    };
+    const result = buildDailyPlan(input);
+    const now = new Date().toISOString();
 
     updateRecord(today, () => ({
       date: today,
@@ -310,14 +371,17 @@ function SetupDaily({
       startTime: exercised ? "19:00" : "18:00",
       energyLevel,
       dayType,
+      dayContext,
+      ...(availableFocusedMinutes !== undefined ? { availableFocusedMinutes } : {}),
       workdayBonus,
-      tasks,
+      tasks: result.tasks,
       stoppedAfter2230: false,
       noCompensatoryStayingUp: false,
       tomorrowFirstStep: "",
       status: "pending",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
+      planSnapshot: { ...result.snapshot, generatedAt: now },
     }));
   };
 
@@ -395,6 +459,8 @@ function SetupDaily({
         </h2>
 
         <ConfigForm
+          dayContext={dayContext}
+          setDayContext={setDayContext}
           exercised={exercised}
           setExercised={setExercised}
           energyLevel={energyLevel}
@@ -403,6 +469,8 @@ function SetupDaily({
           setDayType={setDayType}
           workdayBonus={workdayBonus}
           setWorkdayBonus={setWorkdayBonus}
+          availableFocusedMinutes={availableFocusedMinutes}
+          setAvailableFocusedMinutes={setAvailableFocusedMinutes}
         />
       </div>
 
@@ -423,13 +491,11 @@ function TrackerDaily({
   record,
   updateRecord,
   deleteRecord,
-  yesterdayRecord,
 }: {
   today: string;
   record: DailyRecord;
   updateRecord: any;
   deleteRecord: (date: string) => void;
-  yesterdayRecord?: DailyRecord;
 }) {
   const [showConfig, setShowConfig] = useState(false);
   const [showConfirmRegenerate, setShowConfirmRegenerate] = useState(false);
@@ -437,15 +503,18 @@ function TrackerDaily({
 
   // Local config state for "what if" changes
   const [localConfig, setLocalConfig] = useState({
+    dayContext: record.dayContext ?? "workday" as DayContext,
     exercised: record.exercised,
     energyLevel: record.energyLevel,
     dayType: record.dayType,
     workdayBonus: record.workdayBonus,
+    availableFocusedMinutes: record.availableFocusedMinutes,
   });
 
   // Keep local config in sync if record completely changes (e.g. from parent/localStorage)
   useEffect(() => {
     setLocalConfig({
+      dayContext: record.dayContext ?? "workday",
       exercised: record.exercised,
       energyLevel: record.energyLevel,
       dayType: record.dayType,
@@ -455,19 +524,36 @@ function TrackerDaily({
         readingMinutes: 0,
         passiveListeningMinutes: 0,
       },
+      availableFocusedMinutes: record.availableFocusedMinutes,
     });
   }, [
+    record.dayContext,
     record.exercised,
     record.energyLevel,
     record.dayType,
     record.workdayBonus,
+    record.availableFocusedMinutes,
   ]);
 
   const configIsModified =
+    localConfig.dayContext !== (record.dayContext ?? "workday") ||
     localConfig.exercised !== record.exercised ||
     localConfig.energyLevel !== record.energyLevel ||
     localConfig.dayType !== record.dayType ||
+    localConfig.availableFocusedMinutes !== record.availableFocusedMinutes ||
     JSON.stringify(localConfig.workdayBonus) !== JSON.stringify(record.workdayBonus);
+
+  const candidatePlan = buildDailyPlan({
+    dayContext: localConfig.dayContext,
+    exercised: localConfig.exercised,
+    energyLevel: localConfig.energyLevel,
+    dayType: localConfig.dayType,
+    workdayBonus: localConfig.workdayBonus,
+    ...(localConfig.availableFocusedMinutes !== undefined
+      ? { availableFocusedMinutes: localConfig.availableFocusedMinutes }
+      : {}),
+  });
+  const pendingDifference = previewPlanDifference(record.tasks, candidatePlan.tasks);
 
   const toggleTask = (taskId: string) => {
     updateRecord(today, (prev: DailyRecord) => {
@@ -487,7 +573,8 @@ function TrackerDaily({
         tasks: newTasks,
         updatedAt: new Date().toISOString(),
       };
-      return syncRecordFieldsFromSleepControlTasks(updated);
+      const synced = syncRecordFieldsFromSleepControlTasks(updated);
+      return { ...synced, status: calculateColorStatus(synced) };
     });
   };
 
@@ -508,75 +595,36 @@ function TrackerDaily({
         tasks: newTasks,
         updatedAt: new Date().toISOString(),
       };
-      return syncRecordFieldsFromSleepControlTasks(updated);
+      const synced = syncRecordFieldsFromSleepControlTasks(updated);
+      return { ...synced, status: calculateColorStatus(synced) };
     });
   };
-
 
   const handleApplyConfig = () => {
-    const hasProgress = record.tasks.some(
-      (t) => t.completed || t.actualMinutes > 0,
-    );
-    if (hasProgress) {
-      setShowConfirmRegenerate(true);
-    } else {
-      executeRegenerate();
-    }
+    setShowConfirmRegenerate(true);
   };
 
-  function mergeTaskProgress(
-    oldTasks: TaskCheckItem[],
-    newTasks: TaskCheckItem[]
-  ): TaskCheckItem[] {
-    // Keep track of which old tasks have already been claimed to prevent
-    // multiple new tasks of the same category claiming the same old task.
-    // The user's prompt did not explicitly request this but it's safe for 1:1 mapping.
-    // I will stick exactly to the user's fallback logic.
-    return newTasks.map((newTask) => {
-      const oldTask =
-        oldTasks.find((task) => task.id === newTask.id) ||
-        oldTasks.find(
-          (task) =>
-            task.category === newTask.category &&
-            task.title === newTask.title
-        ) ||
-        oldTasks.find((task) => task.category === newTask.category);
-
-      if (!oldTask) return newTask;
-
-      return {
-        ...newTask,
-        actualMinutes: oldTask.actualMinutes ?? newTask.actualMinutes,
-        completed: oldTask.completed ?? newTask.completed,
-        notes: oldTask.notes ?? newTask.notes,
-      };
-    });
-  }
-
   const executeRegenerate = () => {
-    const newTasks = generateDailyPlan({
-      dayType: localConfig.dayType,
-      exercised: localConfig.exercised,
-      energyLevel: localConfig.energyLevel,
-      workdayBonus: localConfig.workdayBonus,
-      yesterdayStatus: yesterdayRecord?.status === "red" ? "red" : "green",
-    });
-
     updateRecord(today, (prev: DailyRecord) => {
-      const finalTasks = mergeTaskProgress(prev.tasks, newTasks);
+      const now = new Date().toISOString();
+      const finalTasks = mergePlanProgress(prev.tasks, candidatePlan.tasks);
 
       const updated = {
         ...prev,
+        dayContext: localConfig.dayContext,
         exercised: localConfig.exercised,
         energyLevel: localConfig.energyLevel,
         dayType: localConfig.dayType,
         workdayBonus: localConfig.workdayBonus,
+        ...(localConfig.availableFocusedMinutes !== undefined
+          ? { availableFocusedMinutes: localConfig.availableFocusedMinutes }
+          : { availableFocusedMinutes: undefined }),
         tasks: finalTasks,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
+        planSnapshot: { ...candidatePlan.snapshot, generatedAt: now },
       };
-      
-      updated.status = calculateColorStatus(updated);
-      return updated;
+
+      return { ...updated, status: calculateColorStatus(updated) };
     });
 
     setShowConfirmRegenerate(false);
@@ -592,34 +640,12 @@ function TrackerDaily({
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden wallpaper-surface">
-      {/* Regeneration Confirmation Modal */}
       {showConfirmRegenerate && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 flex flex-col items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Overwrite Progress?
-            </h3>
-            <p className="text-sm text-slate-500 mb-6">
-              You have already started some tasks. Regenerating the plan will
-              reset your progress for today. Are you sure you want to proceed?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirmRegenerate(false)}
-                className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={executeRegenerate}
-                className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700"
-              >
-                Regenerate
-              </button>
-            </div>
-          </div>
-        </div>
+        <RegenerationPreview
+          difference={pendingDifference}
+          onCancel={() => setShowConfirmRegenerate(false)}
+          onConfirm={executeRegenerate}
+        />
       )}
 
       {/* Header Info */}
@@ -645,6 +671,7 @@ function TrackerDaily({
           </span>
           <button
             onClick={() => setShowConfig(!showConfig)}
+            aria-label="Edit plan inputs"
             className="p-2 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
           >
             <Settings2 className="w-4 h-4" />
@@ -656,6 +683,8 @@ function TrackerDaily({
       {showConfig && (
         <div className="p-5 border-b border-slate-100 bg-slate-50/50">
           <ConfigForm
+            dayContext={localConfig.dayContext}
+            setDayContext={(value) => setLocalConfig((previous) => ({ ...previous, dayContext: value }))}
             exercised={localConfig.exercised}
             setExercised={(v) =>
               setLocalConfig((p) => ({ ...p, exercised: v }))
@@ -670,6 +699,10 @@ function TrackerDaily({
             setWorkdayBonus={(v) =>
               setLocalConfig((p) => ({ ...p, workdayBonus: v }))
             }
+            availableFocusedMinutes={localConfig.availableFocusedMinutes}
+            setAvailableFocusedMinutes={(value) =>
+              setLocalConfig((previous) => ({ ...previous, availableFocusedMinutes: value }))
+            }
           />
           {configIsModified && (
             <div className="mt-6">
@@ -677,96 +710,22 @@ function TrackerDaily({
                 onClick={handleApplyConfig}
                 className="w-full py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl tracking-widest uppercase shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
               >
-                <RotateCcw className="w-4 h-4" />
-                Apply Changes & Regenerate Plan
+                Preview regenerated plan
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Tracker List */}
-      <div className="p-5">
-        <div className="space-y-3 mb-6">
-          <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-            Timebox Targets
-          </h3>
-          {record.tasks.map((task) => (
-            <div
-              key={task.id}
-              className={cn(
-                "w-full flex justify-between items-center p-3 rounded-xl border transition-all wallpaper-surface",
-                task.completed
-                  ? "bg-slate-50 border-slate-100"
-                  : task.isCore
-                    ? "bg-white border-2 border-indigo-100"
-                    : "bg-white border border-slate-200",
-              )}
-            >
-              <div
-                className="flex items-center flex-1 min-w-0 cursor-pointer"
-                onClick={() => toggleTask(task.id)}
-              >
-                <div
-                  className={cn(
-                    "w-5 h-5 rounded-md flex items-center justify-center mr-3 shrink-0 transition-colors",
-                    task.completed
-                      ? "bg-emerald-500 text-white"
-                      : task.isCore
-                        ? "border-2 border-indigo-300"
-                        : "border-2 border-slate-200",
-                  )}
-                >
-                  {task.completed && <CheckCircle2 className="w-3.5 h-3.5" />}
-                </div>
-                <div className="flex flex-col pr-3 min-w-0 flex-1 justify-center">
-                  <div
-                    className={cn(
-                      "text-sm font-semibold break-words leading-tight",
-                      task.completed ? "text-slate-500 line-through" : "text-slate-800",
-                    )}
-                  >
-                    {task.title}
-                    {task.isCore && !task.completed && (
-                      <span className="text-[9px] text-indigo-500 ml-2 font-bold uppercase bg-indigo-50 px-1 py-0.5 rounded align-middle inline-block">
-                        Core
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[10px] uppercase font-bold text-slate-400 mt-1">
-                    Plan: {task.plannedMinutes}m
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pl-3 border-l border-slate-100 shrink-0">
-                <label className="text-[10px] font-bold text-slate-400 uppercase hidden sm:block">
-                  Actual
-                </label>
-                {task.category !== "sleep_control" ? (
-                  <input
-                    type="number"
-                    min="0"
-                    value={task.actualMinutes || ""}
-                    onChange={(e) => updateTaskMinutes(task.id, parseInt(e.target.value) || 0)}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder={task.plannedMinutes.toString()}
-                    className={cn(
-                      "w-[4rem] text-center p-1.5 rounded-lg text-xs font-mono border bg-white focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all",
-                      task.actualMinutes > 0
-                        ? "border-emerald-200 text-emerald-800 font-bold bg-emerald-50"
-                        : "border-slate-200 text-slate-600"
-                    )}
-                  />
-                ) : (
-                  <div className="w-[4rem] text-center p-1.5 rounded-lg text-xs font-mono border border-transparent text-slate-300">
-                    --
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="space-y-6 p-5">
+        {record.planSnapshot && <PlanSummary snapshot={record.planSnapshot} />}
+        <PlanSections
+          dayContext={record.dayContext ?? "workday"}
+          workdayBonus={record.workdayBonus}
+          tasks={record.tasks}
+          onToggleTask={toggleTask}
+          onUpdateMinutes={updateTaskMinutes}
+        />
       </div>
       {/* Delete Record Section */}
       <div className="p-5 border-t border-slate-100 flex justify-end">
