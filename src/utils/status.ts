@@ -31,7 +31,7 @@ export const isMainTaskForDay = (task: TaskCheckItem, dayType: DayType) => {
   return false;
 };
 
-export function calculateColorStatus(record: Partial<DailyRecord>): DayStatus {
+function calculateLegacyColorStatus(record: Partial<DailyRecord>): DayStatus {
   const { tasks, dayType } = record;
 
   if (!tasks || tasks.length === 0 || !dayType) return "pending";
@@ -94,4 +94,89 @@ export function calculateColorStatus(record: Partial<DailyRecord>): DayStatus {
 
   // Fallback to red if yellow minimums are not met either, and it's not green.
   return "red";
+}
+
+function getControlCompletion(
+  tasks: TaskCheckItem[],
+  definitionId: string,
+  fallback: boolean | undefined,
+): boolean {
+  const task = tasks.find(
+    (candidate) =>
+      candidate.definitionId === definitionId ||
+      candidate.entryId === `control:${definitionId}`,
+  );
+  return task ? task.completed : fallback === true;
+}
+
+function calculateDynamicColorStatus(
+  record: Partial<DailyRecord>,
+): DayStatus {
+  const tasks = record.tasks ?? [];
+  const snapshot = record.planSnapshot;
+  if (!snapshot || tasks.length === 0) return "pending";
+
+  const requiredTasks = tasks.filter(
+    (task) =>
+      task.statusRole === "required" &&
+      !task.carriedForward &&
+      task.plannedMinutes > 0,
+  );
+  const appliedCredit = Math.max(
+    0,
+    snapshot.summary.appliedCoreCreditMinutes,
+  );
+  const eveningTarget = requiredTasks.reduce(
+    (sum, task) => sum + Math.max(0, task.plannedMinutes),
+    0,
+  );
+  const target = appliedCredit + eveningTarget;
+  if (target <= 0) return "pending";
+
+  const actual =
+    appliedCredit +
+    requiredTasks.reduce(
+      (sum, task) =>
+        sum +
+        Math.min(
+          Math.max(0, task.actualMinutes),
+          Math.max(0, task.plannedMinutes),
+        ),
+      0,
+    );
+  const stoppedOnTime = getControlCompletion(
+    tasks,
+    "sleep-stop-heavy",
+    record.stoppedAfter2230,
+  );
+  const noCompensatory = getControlCompletion(
+    tasks,
+    "sleep-no-compensation",
+    record.noCompensatoryStayingUp,
+  );
+
+  if (!noCompensatory || actual <= 0) return "red";
+
+  const completionRatio = actual / target;
+  const allRequiredComplete = requiredTasks.every(
+    (task) => task.actualMinutes >= task.plannedMinutes,
+  );
+
+  if (
+    completionRatio >= 1 &&
+    allRequiredComplete &&
+    stoppedOnTime &&
+    noCompensatory
+  ) {
+    return "green";
+  }
+
+  if (completionRatio >= 0.6 && noCompensatory) return "yellow";
+  return "red";
+}
+
+export function calculateColorStatus(record: Partial<DailyRecord>): DayStatus {
+  return record.planSnapshot
+    ? calculateDynamicColorStatus(record)
+    : calculateLegacyColorStatus(record);
 }
