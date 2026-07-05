@@ -138,8 +138,13 @@ export function getModuleMinutes(records: DailyRecord[]) {
   records.forEach(r => {
     if (r.workdayBonus) {
       totalMomo += r.workdayBonus.momoMinutes || 0;
+      totalDictation += r.workdayBonus.dictationMinutes || 0;
+      totalReading += r.workdayBonus.readingMinutes || 0;
       totalPassive += r.workdayBonus.passiveListeningMinutes || 0;
-      totalFormal += r.workdayBonus.momoMinutes || 0;
+      totalFormal +=
+        (r.workdayBonus.momoMinutes || 0) +
+        (r.workdayBonus.dictationMinutes || 0) +
+        (r.workdayBonus.readingMinutes || 0);
     }
 
     r.tasks.forEach(t => {
