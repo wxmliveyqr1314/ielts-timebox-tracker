@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HistoryPage } from "./HistoryPage";
 import { DailyRecord, DayStatus } from "../types";
+import { buildDailyPlan } from "../planning/planEngine";
 
 afterEach(cleanup);
 
@@ -52,6 +53,31 @@ function renderHistory(records: Record<string, DailyRecord>) {
   return appData;
 }
 
+function makeDynamicRecord(date: string): DailyRecord {
+  const result = buildDailyPlan({
+    dayContext: "workday",
+    exercised: false,
+    energyLevel: "normal",
+    dayType: "listening_focus",
+    availableFocusedMinutes: 90,
+    workdayBonus: {
+      momoMinutes: 20,
+      dictationMinutes: 30,
+      readingMinutes: 10,
+      passiveListeningMinutes: 75,
+    },
+  });
+  const now = `${date}T12:00:00.000Z`;
+  return {
+    ...makeRecord(date, "yellow"),
+    dayContext: "workday",
+    availableFocusedMinutes: 90,
+    workdayBonus: result.snapshot.input.workdayBonus,
+    tasks: result.tasks,
+    planSnapshot: { ...result.snapshot, generatedAt: now },
+  };
+}
+
 describe("HistoryPage", () => {
   it("renders all status counts including pending", () => {
     renderHistory({
@@ -82,5 +108,44 @@ describe("HistoryPage", () => {
     renderHistory({ a: makeRecord("2026-06-27", "green") });
     expect(screen.getByText("Dictation")).toBeTruthy();
     expect(screen.queryByText("listening_focus")).toBeNull();
+  });
+
+  it("shows the persisted dynamic plan summary when expanded", () => {
+    renderHistory({ a: makeDynamicRecord("2026-06-27") });
+    fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
+
+    const summary = screen.getByRole("region", { name: /historical plan summary/i });
+    expect(within(summary).getByText("Workday")).toBeTruthy();
+    expect(within(summary).getByText("Tonight focused")).toBeTruthy();
+    expect(within(summary).getByText("90m")).toBeTruthy();
+    expect(within(summary).getByText("Completed earlier")).toBeTruthy();
+    expect(within(summary).getByText("135m")).toBeTruthy();
+    expect(within(summary).getByText("Capacity trim")).toBeTruthy();
+    expect(within(summary).getByText("Parallel listening")).toBeTruthy();
+    expect(within(summary).getByText(/reference already met/i)).toBeTruthy();
+  });
+
+  it("keeps legacy details available without a plan summary", () => {
+    renderHistory({ a: makeRecord("2026-06-27", "green") });
+    fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
+
+    expect(screen.getByText("Tasks")).toBeTruthy();
+    expect(screen.queryByRole("region", { name: /historical plan summary/i })).toBeNull();
+  });
+
+  it("warns when a historical plan input changes without replacing tasks", () => {
+    const record = makeDynamicRecord("2026-06-27");
+    const appData = renderHistory({ a: record });
+    fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
+    fireEvent.change(screen.getByLabelText(/historical day context/i), {
+      target: { value: "rest_day" },
+    });
+
+    expect(screen.getByText(/plan inputs changed/i)).toBeTruthy();
+    expect(screen.getByText(/existing tasks were not regenerated/i)).toBeTruthy();
+    const updater = appData.updateRecord.mock.calls[0][1];
+    const updated = updater(record) as DailyRecord;
+    expect(updated.dayContext).toBe("rest_day");
+    expect(updated.tasks).toEqual(record.tasks);
   });
 });

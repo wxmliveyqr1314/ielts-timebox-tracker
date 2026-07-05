@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AppState, DailyRecord } from "../types";
+import { DailyRecord, DayContext } from "../types";
 import { formatDateStr, sortRecordsByDateDesc } from "../utils/date";
 import { cn } from "../lib/utils";
 import { 
@@ -10,6 +10,7 @@ import {
 } from "../utils/status";
 import { syncSleepControlTasks, syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
 import { formatFocusMode } from "../utils/display";
+import { PlanSummary } from "../components/daily/PlanSummary";
 
 // Helper to extract minutes
 function getRecordMetrics(record: DailyRecord) {
@@ -182,8 +183,64 @@ export function HistoryPage({ appData }: { appData: any }) {
   );
 }
 
+function HistoricalPlanSummary({ record }: { record: DailyRecord }) {
+  const snapshot = record.planSnapshot;
+  if (!snapshot) return null;
+
+  const completedEarlierMinutes = snapshot.credits.reduce(
+    (sum, credit) => sum + credit.enteredMinutes,
+    0,
+  );
+
+  return (
+    <section
+      aria-label="Historical plan summary"
+      className="space-y-3 rounded-xl border border-slate-200 bg-white/50 p-4 wallpaper-surface"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Generated plan
+          </h3>
+          <p className="mt-1 text-[10px] text-slate-400">
+            Saved by planning engine v{snapshot.engineVersion}
+          </p>
+        </div>
+        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase text-indigo-600">
+          {snapshot.input.dayContext === "rest_day" ? "Rest day" : "Workday"}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg bg-emerald-50/80 px-3 py-2">
+        <span className="text-xs font-semibold text-emerald-700">Completed earlier</span>
+        <span className="font-mono text-xs font-bold text-emerald-900">
+          {completedEarlierMinutes}m
+        </span>
+      </div>
+
+      <PlanSummary snapshot={snapshot} />
+    </section>
+  );
+}
+
+function planInputsDifferFromSnapshot(record: DailyRecord): boolean {
+  const input = record.planSnapshot?.input;
+  if (!input) return false;
+  return (
+    (record.dayContext ?? "workday") !== input.dayContext ||
+    record.exercised !== input.exercised ||
+    record.energyLevel !== input.energyLevel ||
+    record.dayType !== input.dayType ||
+    record.availableFocusedMinutes !== input.availableFocusedMinutes ||
+    JSON.stringify(record.workdayBonus) !== JSON.stringify(input.workdayBonus)
+  );
+}
+
 function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRecord, updateRecord: any, deleteRecord: (date: string) => void }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [planInputsChanged, setPlanInputsChanged] = useState(() =>
+    planInputsDifferFromSnapshot(record),
+  );
 
   const handleTaskUpdate = (taskId: string, field: "actualMinutes" | "completed" | "notes", value: any) => {
     updateRecord(record.date, (prev: DailyRecord) => {
@@ -216,8 +273,45 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
     });
   };
 
+  const handlePlanInputUpdate = (field: "dayContext", value: DayContext) => {
+    setPlanInputsChanged(true);
+    updateRecord(record.date, (prev: DailyRecord) => ({
+      ...prev,
+      [field]: value,
+      updatedAt: new Date().toISOString(),
+    }));
+  };
+
   return (
     <div className="space-y-6">
+      <HistoricalPlanSummary record={record} />
+
+      {record.planSnapshot && (
+        <section className="space-y-3">
+          <div>
+            <label htmlFor={`history-day-context-${record.date}`} className="mb-1 block text-xs font-semibold text-slate-600">
+              Historical day context
+            </label>
+            <select
+              id={`history-day-context-${record.date}`}
+              value={record.dayContext ?? record.planSnapshot.input.dayContext}
+              onChange={(event) => handlePlanInputUpdate("dayContext", event.target.value as DayContext)}
+              className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="workday">Workday</option>
+              <option value="rest_day">Rest day</option>
+            </select>
+          </div>
+
+          {planInputsChanged && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <p className="font-bold">Plan inputs changed</p>
+              <p className="mt-1">Existing tasks were not regenerated. Use Daily to preview and apply a new plan.</p>
+            </div>
+          )}
+        </section>
+      )}
+
       <div className="space-y-0">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-2">Tasks</h3>
         {record.tasks.map(task => (
