@@ -6,6 +6,31 @@ export type DayType =
 
 export type EnergyLevel = "low" | "normal" | "high";
 
+export type DayContext = "workday" | "rest_day";
+
+export type CreditGroup =
+  | "momo"
+  | "dictation"
+  | "reading"
+  | "passive_listening";
+
+export type CapacityKind = "focused" | "parallel" | "anchor" | "control";
+
+export type StatusRole = "required" | "optional" | "ignored" | "control";
+
+export type PlanEngineVersion = 1;
+
+export type PlanAdjustmentCode =
+  | "low_energy"
+  | "high_energy"
+  | "workout_start"
+  | "workday_credit"
+  | "rest_day"
+  | "manual_capacity"
+  | "capacity_trimmed"
+  | "passive_reference_met"
+  | "recovery_no_increase";
+
 export type DayStatus = "green" | "yellow" | "red" | "pending";
 
 export type TaskCategory =
@@ -34,6 +59,43 @@ export interface WorkdayBonus {
   readingMinutes?: number;
 }
 
+export interface DailyPlanInput {
+  exercised: boolean;
+  energyLevel: EnergyLevel;
+  dayType: DayType;
+  dayContext: DayContext;
+  workdayBonus: WorkdayBonus;
+  availableFocusedMinutes?: number;
+}
+
+export interface PlanCredit {
+  group: CreditGroup;
+  enteredMinutes: number;
+  appliedMinutes: number;
+  extraMinutes: number;
+}
+
+export interface PlanSummary {
+  standardCoreMinutes: number;
+  energyAdjustedCoreMinutes: number;
+  appliedCoreCreditMinutes: number;
+  extraCompletedMinutes: number;
+  capacityMinutes: number;
+  capacityTrimmedMinutes: number;
+  eveningCoreTargetMinutes: number;
+  passiveReferenceMinutes: number;
+  passiveReferenceRemainingMinutes: number;
+}
+
+export interface DailyPlanSnapshot {
+  engineVersion: PlanEngineVersion;
+  generatedAt: string;
+  input: DailyPlanInput;
+  credits: PlanCredit[];
+  summary: PlanSummary;
+  adjustmentCodes: PlanAdjustmentCode[];
+}
+
 export interface TaskCheckItem {
   id: string;
   title: string;
@@ -45,6 +107,17 @@ export interface TaskCheckItem {
   isEveningTask: boolean;
   canBeReducedByWorkdayBonus?: boolean;
   notes?: string;
+  definitionId?: string;
+  entryId?: string;
+  creditGroup?: CreditGroup;
+  capacityKind?: CapacityKind;
+  statusRole?: StatusRole;
+  carriedForward?: boolean;
+}
+
+export interface DailyPlanResult {
+  tasks: TaskCheckItem[];
+  snapshot: Omit<DailyPlanSnapshot, "generatedAt">;
 }
 
 export interface DailyPlanOptions {
@@ -60,9 +133,11 @@ export interface DailyRecord {
   weekday: string;
 
   exercised: boolean;
-  startTime: "18:00" | "19:00";
+  startTime: "17:00" | "18:00" | "19:00";
   energyLevel: EnergyLevel;
   dayType: DayType;
+  dayContext?: DayContext;
+  availableFocusedMinutes?: number;
 
   workdayBonus: WorkdayBonus;
 
@@ -78,6 +153,7 @@ export interface DailyRecord {
   status: DayStatus;
   createdAt: string;
   updatedAt: string;
+  planSnapshot?: DailyPlanSnapshot;
 }
 
 export interface AppSettings {
