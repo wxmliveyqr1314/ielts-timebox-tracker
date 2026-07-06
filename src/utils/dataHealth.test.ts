@@ -199,4 +199,68 @@ describe("analyzeAppDataHealth", () => {
     const report = analyzeAppDataHealth({ records: { [record.date]: record } });
     expect(report.issues.some((issue) => issue.code === "PLAN_SNAPSHOT_MISSING_FIELDS")).toBe(true);
   });
+
+  it("accepts valid stretch metadata and keeps legacy records healthy", () => {
+    const legacy = createValidRecord("2026-07-05");
+    const stretch = createValidRecord("2026-07-06");
+    const result = buildDailyPlan({
+      dayContext: "workday",
+      exercised: false,
+      energyLevel: "normal",
+      dayType: "listening_focus",
+      workdayBonus: { passiveListeningMinutes: 0 },
+      stretchEnabled: true,
+      stretchStrategy: "same_focus",
+    });
+    stretch.dayContext = "workday";
+    stretch.tasks = result.tasks;
+    stretch.planSnapshot = {
+      ...result.snapshot,
+      generatedAt: "2026-07-06T12:00:00.000Z",
+    };
+
+    const report = analyzeAppDataHealth({
+      records: {
+        [legacy.date]: legacy,
+        [stretch.date]: stretch,
+      },
+    });
+
+    expect(report.ok).toBe(true);
+  });
+
+  it("identifies invalid stretch metadata fields", () => {
+    const record = createValidRecord("2026-07-06");
+    const result = buildDailyPlan({
+      dayContext: "workday",
+      exercised: false,
+      energyLevel: "normal",
+      dayType: "listening_focus",
+      workdayBonus: { passiveListeningMinutes: 0 },
+      stretchEnabled: true,
+      stretchStrategy: "same_focus",
+    });
+    record.dayContext = "workday";
+    record.tasks = result.tasks;
+    record.planSnapshot = {
+      ...result.snapshot,
+      generatedAt: "2026-07-06T12:00:00.000Z",
+      stretch: {
+        enabled: "yes",
+        strategy: "custom",
+        budgetMinutes: -1,
+        plannedMinutes: Number.NaN,
+      } as any,
+    };
+
+    const report = analyzeAppDataHealth({
+      records: { [record.date]: record },
+    });
+    const codes = report.issues.map((issue) => issue.code);
+
+    expect(codes).toContain("PLAN_STRETCH_INVALID_ENABLED");
+    expect(codes).toContain("PLAN_STRETCH_INVALID_STRATEGY");
+    expect(codes).toContain("PLAN_STRETCH_INVALID_BUDGET");
+    expect(codes).toContain("PLAN_STRETCH_INVALID_PLANNED");
+  });
 });

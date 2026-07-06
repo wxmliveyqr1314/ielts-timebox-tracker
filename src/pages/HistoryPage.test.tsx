@@ -153,4 +153,37 @@ describe("HistoryPage", () => {
     expect(updated.dayContext).toBe("rest_day");
     expect(updated.tasks).toEqual(record.tasks);
   });
+
+  it("shows stretch summary without changing historical status", () => {
+    const result = buildDailyPlan({
+      dayContext: "workday",
+      exercised: false,
+      energyLevel: "normal",
+      dayType: "listening_focus",
+      workdayBonus: { passiveListeningMinutes: 0 },
+      stretchEnabled: true,
+      stretchStrategy: "balanced",
+    });
+    const date = "2026-06-27";
+    const record: DailyRecord = {
+      ...makeRecord(date, "green"),
+      dayContext: "workday",
+      workdayBonus: result.snapshot.input.workdayBonus,
+      tasks: result.tasks,
+      planSnapshot: {
+        ...result.snapshot,
+        generatedAt: `${date}T12:00:00.000Z`,
+      },
+    };
+
+    renderHistory({ [date]: record });
+    fireEvent.click(
+      screen.getByRole("button", { name: /expand jun 27, 2026/i }),
+    );
+
+    expect(screen.getByText("Optional stretch")).toBeTruthy();
+    expect(screen.getByText(/does not change day status/i)).toBeTruthy();
+    expect(screen.getByText("Balanced")).toBeTruthy();
+    expect(screen.getAllByText(/green/i).length).toBeGreaterThan(0);
+  });
 });
