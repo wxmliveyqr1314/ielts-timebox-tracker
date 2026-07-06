@@ -225,4 +225,39 @@ describe("dynamic color status", () => {
 
     expect(calculateColorStatus(record)).toBe("red");
   });
+
+  it("ignores incomplete stretch tasks when calculating dynamic status", () => {
+    const snapshot: DailyPlanSnapshot = {
+      ...dynamicSnapshot(),
+      engineVersion: 2,
+      input: {
+        ...dynamicSnapshot().input,
+        stretchEnabled: true,
+        stretchStrategy: "same_focus",
+      },
+      adjustmentCodes: ["stretch_enabled"],
+      stretch: {
+        enabled: true,
+        strategy: "same_focus",
+        budgetMinutes: 170,
+        plannedMinutes: 20,
+      },
+    };
+    const record = legacyRecord({
+      planSnapshot: snapshot,
+      tasks: [
+        task("required", "momo", 100, 100, {
+          capacityKind: "focused",
+          statusRole: "required",
+        }),
+        task("stretch", "momo", 20, 0, {
+          capacityKind: "stretch",
+          statusRole: "required",
+          planRole: "stretch",
+        }),
+      ],
+    });
+
+    expect(calculateColorStatus(record)).toBe("green");
+  });
 });

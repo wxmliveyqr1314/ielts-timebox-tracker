@@ -83,4 +83,70 @@ describe("module minute statistics", () => {
     expect(result.totalDictation).toBe(35);
     expect(result.totalPassive).toBe(65);
   });
+
+  it("counts completed stretch minutes as study minutes", () => {
+    const stretchRecord = record({
+      planSnapshot: {
+        engineVersion: 2,
+        generatedAt: "2026-07-06T00:00:00.000Z",
+        input: {
+          exercised: false,
+          energyLevel: "normal",
+          dayType: "listening_focus",
+          dayContext: "workday",
+          workdayBonus: { passiveListeningMinutes: 0 },
+          stretchEnabled: true,
+          stretchStrategy: "same_focus",
+        },
+        credits: [],
+        summary: {
+          standardCoreMinutes: 175,
+          energyAdjustedCoreMinutes: 175,
+          appliedCoreCreditMinutes: 0,
+          extraCompletedMinutes: 0,
+          capacityMinutes: 270,
+          capacityTrimmedMinutes: 0,
+          eveningCoreTargetMinutes: 175,
+          passiveReferenceMinutes: 60,
+          passiveReferenceRemainingMinutes: 60,
+        },
+        adjustmentCodes: ["stretch_enabled"],
+        stretch: {
+          enabled: true,
+          strategy: "same_focus",
+          budgetMinutes: 95,
+          plannedMinutes: 20,
+        },
+      },
+      tasks: [
+        {
+          id: "required-momo",
+          title: "Required Momo",
+          category: "momo",
+          plannedMinutes: 30,
+          actualMinutes: 30,
+          completed: true,
+          isCore: true,
+          isEveningTask: true,
+        },
+        {
+          id: "stretch-momo",
+          title: "Stretch Momo",
+          category: "momo",
+          plannedMinutes: 20,
+          actualMinutes: 20,
+          completed: true,
+          isCore: false,
+          isEveningTask: true,
+          planRole: "stretch",
+          capacityKind: "stretch",
+          statusRole: "optional",
+        },
+      ],
+    });
+
+    const result = getModuleMinutes([stretchRecord]);
+    expect(result.totalFormal).toBe(50);
+    expect(result.totalMomo).toBe(50);
+  });
 });

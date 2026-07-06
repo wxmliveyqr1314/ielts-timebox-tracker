@@ -109,6 +109,20 @@ function getControlCompletion(
   return task ? task.completed : fallback === true;
 }
 
+function isRequiredDynamicTarget(task: TaskCheckItem): boolean {
+  if (task.carriedForward) return false;
+  if (task.planRole === "stretch") return false;
+  if (task.capacityKind === "stretch") return false;
+  if (task.statusRole === "optional" || task.statusRole === "ignored") {
+    return false;
+  }
+  return (
+    task.statusRole === "required" ||
+    task.capacityKind === "focused" ||
+    task.capacityKind === "anchor"
+  );
+}
+
 function calculateDynamicColorStatus(
   record: Partial<DailyRecord>,
 ): DayStatus {
@@ -117,10 +131,7 @@ function calculateDynamicColorStatus(
   if (!snapshot || tasks.length === 0) return "pending";
 
   const requiredTasks = tasks.filter(
-    (task) =>
-      task.statusRole === "required" &&
-      !task.carriedForward &&
-      task.plannedMinutes > 0,
+    (task) => isRequiredDynamicTarget(task) && task.plannedMinutes > 0,
   );
   const appliedCredit = Math.max(
     0,
