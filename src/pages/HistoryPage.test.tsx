@@ -115,14 +115,19 @@ describe("HistoryPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
 
     const summary = screen.getByRole("region", { name: /historical plan summary/i });
+    const planSummary = within(summary).getByRole("region", {
+      name: "Plan summary",
+    });
     expect(within(summary).getByText("Workday")).toBeTruthy();
-    expect(within(summary).getByText("Tonight focused")).toBeTruthy();
-    expect(within(summary).getByText("90m")).toBeTruthy();
-    expect(within(summary).getByText("Completed earlier")).toBeTruthy();
+    expect(within(planSummary).getByText("Focused capacity")).toBeTruthy();
+    expect(within(planSummary).getByText("Mode target")).toBeTruthy();
+    expect(within(planSummary).getByText("Tonight focused")).toBeTruthy();
+    expect(within(planSummary).getAllByText("90m")).toHaveLength(2);
+    expect(within(planSummary).getByText("Completed earlier")).toBeTruthy();
+    expect(within(planSummary).getByText("Unused focused capacity")).toBeTruthy();
     expect(within(summary).getByText("135m")).toBeTruthy();
-    expect(within(summary).getByText("Capacity trim")).toBeTruthy();
-    expect(within(summary).getByText("Parallel listening")).toBeTruthy();
-    expect(within(summary).getByText(/reference already met/i)).toBeTruthy();
+    expect(within(planSummary).getByText("Parallel listening")).toBeTruthy();
+    expect(within(planSummary).getByText(/reference already met/i)).toBeTruthy();
   });
 
   it("keeps legacy details available without a plan summary", () => {

@@ -107,9 +107,13 @@ export function PlanSections({
   const focused = tasks.filter(
     (task) =>
       !task.carriedForward &&
+      task.planRole !== "stretch" &&
       (task.capacityKind === "focused" ||
         task.capacityKind === "anchor" ||
         (!task.capacityKind && task.category !== "sleep_control")),
+  );
+  const stretch = tasks.filter(
+    (task) => !task.carriedForward && task.planRole === "stretch",
   );
   const parallel = tasks.filter((task) => !task.carriedForward && task.capacityKind === "parallel");
   const carried = tasks.filter((task) => task.carriedForward);
@@ -138,6 +142,27 @@ export function PlanSections({
         <section aria-label="Tonight focused tasks" className="space-y-3">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tonight focused</h3>
           {focused.map((task) => <TaskRow key={task.id} task={task} onToggleTask={onToggleTask} onUpdateMinutes={onUpdateMinutes} />)}
+        </section>
+      )}
+
+      {stretch.length > 0 && (
+        <section aria-label="Optional stretch tasks" className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">
+              Optional stretch
+            </h3>
+            <span className="shrink-0 text-[10px] font-semibold text-slate-400">
+              0 penalty if skipped
+            </span>
+          </div>
+          {stretch.map((task) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              onToggleTask={onToggleTask}
+              onUpdateMinutes={onUpdateMinutes}
+            />
+          ))}
         </section>
       )}
 

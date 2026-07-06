@@ -16,6 +16,10 @@ function Metric({ label, value }: { label: string; value: string }) {
 export function PlanSummary({ snapshot }: PlanSummaryProps) {
   const { summary } = snapshot;
   const passiveMet = summary.passiveReferenceRemainingMinutes === 0;
+  const unusedFocusedCapacity = Math.max(
+    0,
+    summary.capacityMinutes - summary.energyAdjustedCoreMinutes,
+  );
 
   return (
     <section aria-label="Plan summary" className="grid gap-3 md:grid-cols-[1fr_0.8fr]">
@@ -23,10 +27,10 @@ export function PlanSummary({ snapshot }: PlanSummaryProps) {
         <h3 className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
           Focused plan
         </h3>
-        <Metric label="Standard target" value={`${summary.standardCoreMinutes}m`} />
-        <Metric label="Energy adjusted" value={`${summary.energyAdjustedCoreMinutes}m`} />
-        <Metric label="Completed credit" value={`-${summary.appliedCoreCreditMinutes}m`} />
-        <Metric label="Capacity trim" value={`-${summary.capacityTrimmedMinutes}m`} />
+        <Metric label="Focused capacity" value={`${summary.capacityMinutes}m`} />
+        <Metric label="Mode target" value={`${summary.energyAdjustedCoreMinutes}m`} />
+        <Metric label="Completed earlier" value={`-${summary.appliedCoreCreditMinutes}m`} />
+        <Metric label="Unused focused capacity" value={`${unusedFocusedCapacity}m`} />
         <div className="mt-2 border-t border-slate-200 pt-2">
           <Metric label="Tonight focused" value={`${summary.eveningCoreTargetMinutes}m`} />
         </div>
