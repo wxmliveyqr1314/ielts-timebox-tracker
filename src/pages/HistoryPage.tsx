@@ -191,6 +191,12 @@ function HistoricalPlanSummary({ record }: { record: DailyRecord }) {
     (sum, credit) => sum + credit.enteredMinutes,
     0,
   );
+  const completedStretchMinutes = record.tasks
+    .filter(
+      (task) =>
+        task.planRole === "stretch" || task.capacityKind === "stretch",
+    )
+    .reduce((sum, task) => sum + Math.max(0, task.actualMinutes || 0), 0);
 
   return (
     <section
@@ -219,6 +225,29 @@ function HistoricalPlanSummary({ record }: { record: DailyRecord }) {
       </div>
 
       <PlanSummary snapshot={snapshot} />
+
+      {snapshot.stretch?.enabled && (
+        <div
+          aria-label="Historical optional stretch"
+          className="border-t border-indigo-100 pt-3"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">
+              Optional stretch
+            </span>
+            <span className="text-xs font-bold text-slate-700">
+              {snapshot.stretch.strategy === "balanced"
+                ? "Balanced"
+                : "Same Focus"}
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            {snapshot.stretch.plannedMinutes}m planned from{" "}
+            {snapshot.stretch.budgetMinutes}m unused capacity;{" "}
+            {completedStretchMinutes}m completed. It does not change day status.
+          </p>
+        </div>
+      )}
     </section>
   );
 }

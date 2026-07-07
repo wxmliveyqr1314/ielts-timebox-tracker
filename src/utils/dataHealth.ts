@@ -145,13 +145,63 @@ export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
           key,
         );
       } else {
-        if (snapshot.engineVersion !== 1) {
+        if (snapshot.engineVersion !== 1 && snapshot.engineVersion !== 2) {
           addIssue(
             "error",
             "INVALID_PLAN_ENGINE_VERSION",
             `Unsupported plan engine version '${String(snapshot.engineVersion)}'`,
             key,
           );
+        }
+
+        if (snapshot.stretch !== undefined) {
+          const stretch: Record<string, unknown> = isObject(snapshot.stretch)
+            ? snapshot.stretch
+            : {};
+          if (typeof stretch.enabled !== "boolean") {
+            addIssue(
+              "error",
+              "PLAN_STRETCH_INVALID_ENABLED",
+              "Plan stretch enabled flag is invalid",
+              key,
+            );
+          }
+          if (
+            stretch.strategy !== undefined &&
+            stretch.strategy !== "same_focus" &&
+            stretch.strategy !== "balanced"
+          ) {
+            addIssue(
+              "error",
+              "PLAN_STRETCH_INVALID_STRATEGY",
+              "Plan stretch strategy is invalid",
+              key,
+            );
+          }
+          if (
+            typeof stretch.budgetMinutes !== "number" ||
+            !Number.isFinite(stretch.budgetMinutes) ||
+            stretch.budgetMinutes < 0
+          ) {
+            addIssue(
+              "error",
+              "PLAN_STRETCH_INVALID_BUDGET",
+              "Plan stretch budget is invalid",
+              key,
+            );
+          }
+          if (
+            typeof stretch.plannedMinutes !== "number" ||
+            !Number.isFinite(stretch.plannedMinutes) ||
+            stretch.plannedMinutes < 0
+          ) {
+            addIssue(
+              "error",
+              "PLAN_STRETCH_INVALID_PLANNED",
+              "Plan stretch planned minutes is invalid",
+              key,
+            );
+          }
         }
 
         const invalidSummary = PLAN_SUMMARY_FIELDS.some((field) => {

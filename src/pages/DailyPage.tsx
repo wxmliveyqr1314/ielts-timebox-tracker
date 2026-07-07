@@ -4,6 +4,7 @@ import {
   DayType,
   DayContext,
   EnergyLevel,
+  StretchStrategy,
   WorkdayBonus,
   DailyPlanInput,
 } from "../types";
@@ -31,6 +32,17 @@ import { RegenerationPreview } from "../components/daily/RegenerationPreview";
 
 interface DailyPageProps {
   appData: any; // ReturnType of useAppData
+}
+
+interface EditablePlanConfig {
+  dayContext: DayContext;
+  exercised: boolean;
+  energyLevel: EnergyLevel;
+  dayType: DayType;
+  workdayBonus: WorkdayBonus;
+  availableFocusedMinutes?: number;
+  stretchEnabled: boolean;
+  stretchStrategy: StretchStrategy;
 }
 
 export function DailyPage({ appData }: DailyPageProps) {
@@ -502,13 +514,16 @@ function TrackerDaily({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Local config state for "what if" changes
-  const [localConfig, setLocalConfig] = useState({
+  const [localConfig, setLocalConfig] = useState<EditablePlanConfig>({
     dayContext: record.dayContext ?? "workday" as DayContext,
     exercised: record.exercised,
     energyLevel: record.energyLevel,
     dayType: record.dayType,
     workdayBonus: record.workdayBonus,
     availableFocusedMinutes: record.availableFocusedMinutes,
+    stretchEnabled: Boolean(record.planSnapshot?.stretch?.enabled),
+    stretchStrategy:
+      record.planSnapshot?.stretch?.strategy ?? "same_focus",
   });
 
   // Keep local config in sync if record completely changes (e.g. from parent/localStorage)
@@ -525,6 +540,9 @@ function TrackerDaily({
         passiveListeningMinutes: 0,
       },
       availableFocusedMinutes: record.availableFocusedMinutes,
+      stretchEnabled: Boolean(record.planSnapshot?.stretch?.enabled),
+      stretchStrategy:
+        record.planSnapshot?.stretch?.strategy ?? "same_focus",
     });
   }, [
     record.dayContext,
@@ -533,7 +551,19 @@ function TrackerDaily({
     record.dayType,
     record.workdayBonus,
     record.availableFocusedMinutes,
+    record.planSnapshot?.stretch?.enabled,
+    record.planSnapshot?.stretch?.strategy,
   ]);
+
+  const savedStretchEnabled = Boolean(
+    record.planSnapshot?.stretch?.enabled,
+  );
+  const savedStretchStrategy =
+    record.planSnapshot?.stretch?.strategy ?? "same_focus";
+  const stretchConfigIsModified =
+    localConfig.stretchEnabled !== savedStretchEnabled ||
+    (localConfig.stretchEnabled &&
+      localConfig.stretchStrategy !== savedStretchStrategy);
 
   const configIsModified =
     localConfig.dayContext !== (record.dayContext ?? "workday") ||
@@ -541,6 +571,7 @@ function TrackerDaily({
     localConfig.energyLevel !== record.energyLevel ||
     localConfig.dayType !== record.dayType ||
     localConfig.availableFocusedMinutes !== record.availableFocusedMinutes ||
+    stretchConfigIsModified ||
     JSON.stringify(localConfig.workdayBonus) !== JSON.stringify(record.workdayBonus);
 
   const candidatePlan = buildDailyPlan({
@@ -549,11 +580,18 @@ function TrackerDaily({
     energyLevel: localConfig.energyLevel,
     dayType: localConfig.dayType,
     workdayBonus: localConfig.workdayBonus,
+    stretchEnabled: localConfig.stretchEnabled,
+    stretchStrategy: localConfig.stretchStrategy,
     ...(localConfig.availableFocusedMinutes !== undefined
       ? { availableFocusedMinutes: localConfig.availableFocusedMinutes }
       : {}),
   });
   const pendingDifference = previewPlanDifference(record.tasks, candidatePlan.tasks);
+  const unusedFocusedCapacity = Math.max(
+    0,
+    candidatePlan.snapshot.summary.capacityMinutes -
+      candidatePlan.snapshot.summary.energyAdjustedCoreMinutes,
+  );
 
   const toggleTask = (taskId: string) => {
     updateRecord(today, (prev: DailyRecord) => {
@@ -719,6 +757,107 @@ function TrackerDaily({
 
       <div className="space-y-6 p-5">
         {record.planSnapshot && <PlanSummary snapshot={record.planSnapshot} />}
+        {record.planSnapshot && (
+          <section className="wallpaper-surface rounded-xl border border-indigo-100 bg-indigo-50/75 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-slate-800">
+                  Optional stretch
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  Unused focused capacity: {unusedFocusedCapacity}m. Optional
+                  work does not affect today's color status.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={localConfig.stretchEnabled}
+                aria-label={
+                  localConfig.stretchEnabled
+                    ? "Disable optional stretch"
+                    : unusedFocusedCapacity > 0
+                      ? "Add optional stretch"
+                      : "No stretch capacity"
+                }
+                disabled={unusedFocusedCapacity === 0 && !localConfig.stretchEnabled}
+                onClick={() =>
+                  setLocalConfig((previous) => ({
+                    ...previous,
+                    stretchEnabled: !previous.stretchEnabled,
+                  }))
+                }
+                className={cn(
+                  "relative mt-0.5 h-7 w-12 shrink-0 rounded-full border transition-colors",
+                  localConfig.stretchEnabled
+                    ? "border-indigo-600 bg-indigo-600"
+                    : "border-slate-300 bg-slate-200",
+                  unusedFocusedCapacity === 0 &&
+                    !localConfig.stretchEnabled &&
+                    "cursor-not-allowed opacity-50",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                    localConfig.stretchEnabled
+                      ? "translate-x-5"
+                      : "translate-x-0.5",
+                  )}
+                />
+              </button>
+            </div>
+
+            {localConfig.stretchEnabled && (
+              <div className="mt-4">
+                <div
+                  role="group"
+                  className="grid grid-cols-2 gap-2"
+                  aria-label="Stretch strategy"
+                >
+                  {(["same_focus", "balanced"] as const).map((strategy) => {
+                    const selected = localConfig.stretchStrategy === strategy;
+                    return (
+                      <button
+                        key={strategy}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() =>
+                          setLocalConfig((previous) => ({
+                            ...previous,
+                            stretchStrategy: strategy,
+                          }))
+                        }
+                        className={cn(
+                          "rounded-lg border px-3 py-2 text-xs font-bold transition-colors",
+                          selected
+                            ? "border-indigo-500 bg-indigo-100 text-indigo-700"
+                            : "border-slate-200 bg-white/80 text-slate-600",
+                        )}
+                      >
+                        {strategy === "same_focus" ? "Same Focus" : "Balanced"}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-[10px] font-semibold text-indigo-500">
+                  No penalty if skipped. Confirm changes before rebuilding the plan.
+                </p>
+              </div>
+            )}
+
+            {stretchConfigIsModified && (
+              <button
+                type="button"
+                onClick={handleApplyConfig}
+                className="mt-4 w-full rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800"
+              >
+                Preview stretch changes
+              </button>
+            )}
+          </section>
+        )}
         <PlanSections
           dayContext={record.dayContext ?? "workday"}
           workdayBonus={record.workdayBonus}

@@ -7,7 +7,8 @@ import {
   getLongestStreak, 
   getModuleMinutes, 
   getSleepControlStats, 
-  getSpeakingStats 
+  getSpeakingStats,
+  getStretchStats
 } from "../utils/stats";
 import { Flame, Clock, Mic, Activity, Moon, BookOpen, Headphones, ShieldAlert, Award } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -38,6 +39,7 @@ export function StatsPage({ appData }: { appData: any }) {
   const moduleMins = getModuleMinutes(recent7);
   const sleepStats = getSleepControlStats(recent7);
   const speakingStats = getSpeakingStats(recent7);
+  const stretchStats = getStretchStats(appData.data.records as Record<string, DailyRecord>);
 
   const footerMessage = (
     <div className="text-center text-xs font-semibold text-slate-400 px-4 mt-2">
@@ -108,6 +110,35 @@ export function StatsPage({ appData }: { appData: any }) {
       </div>
 
       {/* 状态分布 */}
+      <section
+        className="wallpaper-surface rounded-lg border border-slate-200 bg-white/80 p-4 shadow-sm"
+        role="region"
+        aria-label="Optional stretch"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
+            Optional Stretch
+          </h2>
+          <span className="shrink-0 text-[10px] font-semibold text-slate-400">
+            No penalty
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p className="font-mono text-lg font-bold text-slate-800">{stretchStats.completedMinutes}</p>
+            <p className="text-[10px] text-slate-500">minutes</p>
+          </div>
+          <div>
+            <p className="font-mono text-lg font-bold text-slate-800">{stretchStats.enabledDays}</p>
+            <p className="text-[10px] text-slate-500">enabled days</p>
+          </div>
+          <div>
+            <p className="font-mono text-lg font-bold text-slate-800">{stretchStats.partialDays}</p>
+            <p className="text-[10px] text-slate-500">active days</p>
+          </div>
+        </div>
+      </section>
+
       <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm wallpaper-surface" role="region" aria-label="Status distribution">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Status distribution</h2>
         <div className="space-y-3">

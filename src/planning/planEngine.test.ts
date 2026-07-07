@@ -259,4 +259,86 @@ describe("dynamic daily plan engine", () => {
       },
     ]);
   });
+
+  it("adds same-focus stretch tasks from unused capacity when enabled", () => {
+    const result = buildDailyPlan(
+      baseInput({
+        stretchEnabled: true,
+        stretchStrategy: "same_focus",
+      }),
+    );
+
+    const stretchTasks = result.tasks.filter(
+      (task) => task.planRole === "stretch",
+    );
+
+    expect(result.snapshot.engineVersion).toBe(2);
+    expect(result.snapshot.stretch).toMatchObject({
+      enabled: true,
+      strategy: "same_focus",
+      budgetMinutes: 95,
+      plannedMinutes: 95,
+    });
+    expect(
+      stretchTasks.reduce((sum, task) => sum + task.plannedMinutes, 0),
+    ).toBe(95);
+    expect(stretchTasks.every((task) => task.statusRole === "optional")).toBe(
+      true,
+    );
+    expect(stretchTasks.every((task) => task.capacityKind === "stretch")).toBe(
+      true,
+    );
+  });
+
+  it("keeps disabled stretch plans on the legacy snapshot shape", () => {
+    const result = buildDailyPlan(baseInput());
+
+    expect(result.snapshot.engineVersion).toBe(1);
+    expect(result.snapshot.stretch).toBeUndefined();
+    expect(result.snapshot.input.stretchEnabled).toBeUndefined();
+    expect(result.snapshot.input.stretchStrategy).toBeUndefined();
+  });
+
+  it("uses selected mode target, not completed-earlier credit, for stretch budget", () => {
+    const result = buildDailyPlan(
+      baseInput({
+        workdayBonus: {
+          passiveListeningMinutes: 90,
+          momoMinutes: 20,
+          dictationMinutes: 30,
+          readingMinutes: 720,
+        },
+        stretchEnabled: true,
+        stretchStrategy: "balanced",
+      }),
+    );
+
+    expect(result.snapshot.summary.eveningCoreTargetMinutes).toBe(125);
+    expect(result.snapshot.stretch?.budgetMinutes).toBe(95);
+    expect(result.snapshot.summary.extraCompletedMinutes).toBeGreaterThan(0);
+  });
+
+  it("does not add stretch when the selected mode already fills capacity", () => {
+    const result = buildDailyPlan(
+      baseInput({
+        dayType: "reading_focus",
+        energyLevel: "high",
+        exercised: true,
+        stretchEnabled: true,
+        stretchStrategy: "same_focus",
+      }),
+    );
+
+    expect(result.snapshot.summary.capacityMinutes).toBe(210);
+    expect(result.snapshot.summary.energyAdjustedCoreMinutes).toBe(220);
+    expect(result.snapshot.stretch).toMatchObject({
+      enabled: true,
+      strategy: "same_focus",
+      budgetMinutes: 0,
+      plannedMinutes: 0,
+    });
+    expect(result.tasks.some((task) => task.planRole === "stretch")).toBe(
+      false,
+    );
+  });
 });

@@ -8,17 +8,26 @@ export type EnergyLevel = "low" | "normal" | "high";
 
 export type DayContext = "workday" | "rest_day";
 
+export type StretchStrategy = "same_focus" | "balanced";
+
+export type PlanRole = "baseline" | "stretch" | "carried" | "control";
+
 export type CreditGroup =
   | "momo"
   | "dictation"
   | "reading"
   | "passive_listening";
 
-export type CapacityKind = "focused" | "parallel" | "anchor" | "control";
+export type CapacityKind =
+  | "focused"
+  | "parallel"
+  | "anchor"
+  | "control"
+  | "stretch";
 
 export type StatusRole = "required" | "optional" | "ignored" | "control";
 
-export type PlanEngineVersion = 1;
+export type PlanEngineVersion = 1 | 2;
 
 export type PlanAdjustmentCode =
   | "low_energy"
@@ -29,7 +38,8 @@ export type PlanAdjustmentCode =
   | "manual_capacity"
   | "capacity_trimmed"
   | "passive_reference_met"
-  | "recovery_no_increase";
+  | "recovery_no_increase"
+  | "stretch_enabled";
 
 export type DayStatus = "green" | "yellow" | "red" | "pending";
 
@@ -66,6 +76,8 @@ export interface DailyPlanInput {
   dayContext: DayContext;
   workdayBonus: WorkdayBonus;
   availableFocusedMinutes?: number;
+  stretchEnabled?: boolean;
+  stretchStrategy?: StretchStrategy;
 }
 
 export interface PlanCredit {
@@ -87,6 +99,13 @@ export interface PlanSummary {
   passiveReferenceRemainingMinutes: number;
 }
 
+export interface DailyPlanStretchSummary {
+  enabled: boolean;
+  strategy?: StretchStrategy;
+  budgetMinutes: number;
+  plannedMinutes: number;
+}
+
 export interface DailyPlanSnapshot {
   engineVersion: PlanEngineVersion;
   generatedAt: string;
@@ -94,6 +113,7 @@ export interface DailyPlanSnapshot {
   credits: PlanCredit[];
   summary: PlanSummary;
   adjustmentCodes: PlanAdjustmentCode[];
+  stretch?: DailyPlanStretchSummary;
 }
 
 export interface TaskCheckItem {
@@ -113,6 +133,8 @@ export interface TaskCheckItem {
   capacityKind?: CapacityKind;
   statusRole?: StatusRole;
   carriedForward?: boolean;
+  planRole?: PlanRole;
+  stretchStrategy?: StretchStrategy;
 }
 
 export interface DailyPlanResult {

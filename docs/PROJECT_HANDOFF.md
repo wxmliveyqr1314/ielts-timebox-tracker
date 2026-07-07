@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.1.0
+- Version: v2.2.0
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -11,7 +11,7 @@ The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 
 ## Product Areas
 
-- Dynamic Daily planning and Focus Mode recommendation
+- Dynamic Daily planning, optional stretch tasks, and Focus Mode recommendation
 - History editing and safe deletion
 - Stats and streak reporting
 - Supabase authentication and manual cloud synchronization
@@ -19,9 +19,20 @@ The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 - Data health and JSON backup tools
 - Offline PWA shell with local-first features (cloud actions disabled while offline)
 
-## Dynamic Daily Planning (v2.1)
+## Dynamic Daily Planning (v2.1 / v2.2)
 
 Daily setup now produces an explainable, capacity-aware plan from Day Context, workout state, Energy Level, Focus Mode, optional focused minutes, and real study completed before generation. Every new plan persists a versioned `planSnapshot`; legacy records without a snapshot continue to render and calculate status through the legacy path.
+
+## v2.2 Optional Stretch Plan
+
+v2.2 adds an optional stretch layer after the required v2.1 baseline plan.
+
+- Baseline tasks still decide Green / Yellow / Red.
+- Stretch tasks use unused focused capacity and are marked optional.
+- Stretch can be generated as Same Focus or Balanced.
+- Stretch completion is counted in stats.
+- Incomplete stretch has no penalty.
+- Reward points are intentionally deferred to v2.3.
 
 ### Module ownership
 

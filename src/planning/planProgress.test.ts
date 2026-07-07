@@ -234,4 +234,34 @@ describe("plan progress merge", () => {
     expect(current).toEqual(currentBefore);
     expect(next).toEqual(nextBefore);
   });
+
+  it("preserves matching stretch progress during regeneration", () => {
+    const current = task("stretch:stretch:listening:same:momo", {
+      entryId: "stretch:listening:same:momo",
+      definitionId: "momo",
+      plannedMinutes: 20,
+      actualMinutes: 15,
+      completed: false,
+      planRole: "stretch",
+      capacityKind: "stretch",
+      statusRole: "optional",
+    });
+    const next = task("stretch:stretch:listening:same:momo", {
+      entryId: "stretch:listening:same:momo",
+      definitionId: "momo",
+      plannedMinutes: 25,
+      actualMinutes: 0,
+      completed: false,
+      planRole: "stretch",
+      capacityKind: "stretch",
+      statusRole: "optional",
+    });
+
+    const result = mergePlanProgress([current], [next]);
+    expect(result[0]).toMatchObject({
+      plannedMinutes: 25,
+      actualMinutes: 15,
+      planRole: "stretch",
+    });
+  });
 });

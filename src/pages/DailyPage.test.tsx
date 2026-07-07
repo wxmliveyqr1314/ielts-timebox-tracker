@@ -90,14 +90,14 @@ describe("DailyPage dynamic planning", () => {
     expect(created.tasks.length).toBeGreaterThan(0);
   });
 
-  it("shows standard, adjusted, credit, trimmed, and tonight totals", () => {
+  it("shows capacity, mode target, credit, unused capacity, and tonight totals", () => {
     renderDaily(makeDynamicRecord());
 
-    expect(screen.getByText("Standard target")).toBeTruthy();
-    expect(screen.getByText("Energy adjusted")).toBeTruthy();
-    expect(screen.getByText("Completed credit")).toBeTruthy();
-    expect(screen.getByText("Capacity trim")).toBeTruthy();
     const summary = screen.getByRole("region", { name: "Plan summary" });
+    expect(within(summary).getByText("Focused capacity")).toBeTruthy();
+    expect(within(summary).getByText("Mode target")).toBeTruthy();
+    expect(within(summary).getByText("Completed earlier")).toBeTruthy();
+    expect(within(summary).getByText("Unused focused capacity")).toBeTruthy();
     expect(within(summary).getByText("Tonight focused")).toBeTruthy();
     expect(within(summary).getByText("125m")).toBeTruthy();
   });
@@ -199,5 +199,46 @@ describe("DailyPage dynamic planning", () => {
         notes: "real work",
       }),
     );
+  });
+
+  it("can safely enable same-focus stretch after generating a baseline plan", () => {
+    const record = makeDynamicRecord();
+    const appData = renderDaily(record);
+
+    expect(screen.getByText("Optional stretch")).toBeTruthy();
+    expect(screen.getByText("Unused focused capacity")).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("switch", { name: /add optional stretch/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /same focus/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /preview stretch changes/i }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: /review plan changes/i }),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: /apply regenerated plan/i }),
+    );
+
+    const updater = appData.updateRecord.mock.calls[0][1];
+    const updated = updater(record) as DailyRecord;
+    expect(updated.planSnapshot?.stretch).toMatchObject({
+      enabled: true,
+      strategy: "same_focus",
+      budgetMinutes: 95,
+      plannedMinutes: 95,
+    });
+    expect(updated.tasks.some((task) => task.planRole === "stretch")).toBe(
+      true,
+    );
+
+    cleanup();
+    renderDaily(updated);
+    expect(
+      screen.getByRole("region", { name: /optional stretch tasks/i }),
+    ).toBeTruthy();
+    expect(screen.getByText(/0 penalty if skipped/i)).toBeTruthy();
   });
 });

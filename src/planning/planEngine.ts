@@ -5,6 +5,7 @@ import type {
   DayContext,
   PlanAdjustmentCode,
   PlanCredit,
+  StretchStrategy,
   TaskCheckItem,
   WorkdayBonus,
 } from "../types";
@@ -12,6 +13,10 @@ import {
   getProfileVariant,
   type ProfileEntry,
 } from "./focusProfiles";
+import {
+  getStretchProfile,
+  type StretchProfileEntry,
+} from "./stretchProfiles";
 import { getTaskDefinition } from "./taskRegistry";
 
 const PASSIVE_REFERENCE_MINUTES = 60;
@@ -239,6 +244,55 @@ function standaloneTask(
   });
 }
 
+function normalizeStretchStrategy(value: unknown): StretchStrategy {
+  return value === "balanced" ? "balanced" : "same_focus";
+}
+
+function toStretchTask(
+  entry: StretchProfileEntry,
+  strategy: StretchStrategy,
+): TaskCheckItem {
+  const task = standaloneTask(
+    entry.definitionId,
+    entry.entryId,
+    entry.plannedMinutes,
+  );
+  return {
+    ...task,
+    id: `stretch:${entry.entryId}`,
+    isCore: false,
+    isEveningTask: true,
+    capacityKind: "stretch",
+    statusRole: "optional",
+    planRole: "stretch",
+    stretchStrategy: strategy,
+  };
+}
+
+function buildStretchEntries(
+  budgetMinutes: number,
+  dayType: DailyPlanInput["dayType"],
+  strategy: StretchStrategy,
+): StretchProfileEntry[] {
+  let remaining = Math.max(0, Math.floor(budgetMinutes / 5) * 5);
+  const entries: StretchProfileEntry[] = [];
+
+  for (const entry of getStretchProfile(dayType, strategy).entries) {
+    if (remaining <= 0) break;
+    const definition = getTaskDefinition(entry.definitionId);
+    const increment = definition.incrementMinutes || 5;
+    const allocation = Math.min(
+      entry.plannedMinutes,
+      Math.floor(remaining / increment) * increment,
+    );
+    if (allocation <= 0) continue;
+    entries.push({ ...entry, plannedMinutes: allocation });
+    remaining -= allocation;
+  }
+
+  return entries;
+}
+
 function addAdjustment(
   adjustments: PlanAdjustmentCode[],
   code: PlanAdjustmentCode,
@@ -256,12 +310,17 @@ export function getDefaultFocusedMinutes(
 
 export function buildDailyPlan(rawInput: DailyPlanInput): DailyPlanResult {
   const normalizedBonus = normalizeBonus(rawInput.workdayBonus);
+  const stretchEnabled = Boolean(rawInput.stretchEnabled);
+  const stretchStrategy = normalizeStretchStrategy(rawInput.stretchStrategy);
   const input: DailyPlanInput = {
     exercised: Boolean(rawInput.exercised),
     energyLevel: rawInput.energyLevel,
     dayType: rawInput.dayType,
     dayContext: rawInput.dayContext,
     workdayBonus: normalizedBonus,
+    ...(stretchEnabled
+      ? { stretchEnabled: true, stretchStrategy }
+      : {}),
     ...(Number.isFinite(rawInput.availableFocusedMinutes)
       ? {
           availableFocusedMinutes: normalizeMinutes(
@@ -304,6 +363,17 @@ export function buildDailyPlan(rawInput: DailyPlanInput): DailyPlanResult {
   const eveningCoreTargetMinutes = sumEntries(trimmedEntries);
   const capacityTrimmedMinutes =
     beforeCapacityMinutes - eveningCoreTargetMinutes;
+  const stretchBudgetMinutes = stretchEnabled
+    ? Math.max(0, capacityMinutes - energyAdjustedCoreMinutes)
+    : 0;
+  const stretchEntries = stretchEnabled
+    ? buildStretchEntries(
+        stretchBudgetMinutes,
+        input.dayType,
+        stretchStrategy,
+      )
+    : [];
+  const stretchPlannedMinutes = sumEntries(stretchEntries);
 
   const passiveCredit = credits.find(
     (credit) => credit.group === "passive_listening",
@@ -314,6 +384,11 @@ export function buildDailyPlan(rawInput: DailyPlanInput): DailyPlanResult {
   );
 
   const tasks = trimmedEntries.map(toTask);
+  tasks.push(
+    ...stretchEntries.map((entry) =>
+      toStretchTask(entry, stretchStrategy),
+    ),
+  );
   if (passiveReferenceRemainingMinutes > 0) {
     tasks.push(
       standaloneTask(
@@ -354,11 +429,14 @@ export function buildDailyPlan(rawInput: DailyPlanInput): DailyPlanResult {
   if (input.dayType === "recovery" && input.energyLevel === "high") {
     addAdjustment(adjustmentCodes, "recovery_no_increase");
   }
+  if (stretchEnabled) {
+    addAdjustment(adjustmentCodes, "stretch_enabled");
+  }
 
   return {
     tasks,
     snapshot: {
-      engineVersion: 1,
+      engineVersion: stretchEnabled ? 2 : 1,
       input,
       credits,
       summary: {
@@ -378,6 +456,16 @@ export function buildDailyPlan(rawInput: DailyPlanInput): DailyPlanResult {
         passiveReferenceRemainingMinutes,
       },
       adjustmentCodes,
+      ...(stretchEnabled
+        ? {
+            stretch: {
+              enabled: true,
+              strategy: stretchStrategy,
+              budgetMinutes: stretchBudgetMinutes,
+              plannedMinutes: stretchPlannedMinutes,
+            },
+          }
+        : {}),
     },
   };
 }

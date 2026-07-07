@@ -164,6 +164,32 @@ export function getModuleMinutes(records: DailyRecord[]) {
   return { totalFormal, totalMomo, totalDictation, totalReading, totalSpeaking, totalPassive };
 }
 
+export interface StretchStats {
+  enabledDays: number;
+  partialDays: number;
+  completedMinutes: number;
+}
+
+export function getStretchStats(records: Record<string, DailyRecord>): StretchStats {
+  let enabledDays = 0;
+  let partialDays = 0;
+  let completedMinutes = 0;
+
+  Object.values(records).forEach((record) => {
+    if (!record.planSnapshot?.stretch?.enabled) return;
+
+    enabledDays += 1;
+    const dayMinutes = record.tasks
+      .filter((task) => task.planRole === "stretch" || task.capacityKind === "stretch")
+      .reduce((sum, task) => sum + Math.max(0, task.actualMinutes || 0), 0);
+
+    completedMinutes += dayMinutes;
+    if (dayMinutes > 0) partialDays += 1;
+  });
+
+  return { enabledDays, partialDays, completedMinutes };
+}
+
 export function getSleepControlStats(records: DailyRecord[]) {
   let stoppedOnTime = 0;
   let noCompensatory = 0;
