@@ -309,4 +309,3 @@ The intended future model:
 - Stats or Settings can define a real-world reward goal, such as a meal or purchase, with a target point total.
 
 This is intentionally deferred so v2.2 can validate whether optional stretch tasks feel motivating without making the scoring system too complex too early.
-
