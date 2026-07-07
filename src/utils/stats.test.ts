@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DailyRecord } from "../types";
-import { getModuleMinutes } from "./stats";
+import { getModuleMinutes, getStretchStats } from "./stats";
 
 function record(overrides: Partial<DailyRecord> = {}): DailyRecord {
   return {
@@ -148,5 +148,66 @@ describe("module minute statistics", () => {
     const result = getModuleMinutes([stretchRecord]);
     expect(result.totalFormal).toBe(50);
     expect(result.totalMomo).toBe(50);
+  });
+});
+
+describe("optional stretch statistics", () => {
+  it("summarizes optional stretch usage", () => {
+    const active = record({
+      date: "2026-07-06",
+      planSnapshot: {
+        engineVersion: 2,
+        generatedAt: "2026-07-06T00:00:00.000Z",
+        input: {
+          exercised: false,
+          energyLevel: "normal",
+          dayType: "listening_focus",
+          dayContext: "workday",
+          workdayBonus: { passiveListeningMinutes: 0 },
+          stretchEnabled: true,
+          stretchStrategy: "same_focus",
+        },
+        credits: [],
+        summary: {
+          standardCoreMinutes: 175,
+          energyAdjustedCoreMinutes: 175,
+          appliedCoreCreditMinutes: 0,
+          extraCompletedMinutes: 0,
+          capacityMinutes: 270,
+          capacityTrimmedMinutes: 0,
+          eveningCoreTargetMinutes: 175,
+          passiveReferenceMinutes: 60,
+          passiveReferenceRemainingMinutes: 60,
+        },
+        adjustmentCodes: ["stretch_enabled"],
+        stretch: {
+          enabled: true,
+          strategy: "same_focus",
+          budgetMinutes: 95,
+          plannedMinutes: 40,
+        },
+      },
+      tasks: [
+        {
+          id: "stretch-momo",
+          title: "Stretch Momo",
+          category: "momo",
+          plannedMinutes: 40,
+          actualMinutes: 25,
+          completed: false,
+          isCore: false,
+          isEveningTask: true,
+          planRole: "stretch",
+          capacityKind: "stretch",
+          statusRole: "optional",
+        },
+      ],
+    });
+
+    expect(getStretchStats({ [active.date]: active })).toEqual({
+      enabledDays: 1,
+      partialDays: 1,
+      completedMinutes: 25,
+    });
   });
 });

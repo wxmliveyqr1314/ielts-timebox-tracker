@@ -105,4 +105,65 @@ describe("StatsPage", () => {
     render(<StatsPage appData={{ data: { records: {} } }} />);
     expect(screen.getByText(/steady progress, not daily perfection/i)).toBeTruthy();
   });
+
+  it("renders optional stretch stats separately from core stats", () => {
+    const stretchRecord = makeStatsRecord("2026-06-27", "green");
+    stretchRecord.planSnapshot = {
+      engineVersion: 2,
+      generatedAt: "2026-06-27T00:00:00.000Z",
+      input: {
+        exercised: false,
+        energyLevel: "normal",
+        dayType: "listening_focus",
+        dayContext: "workday",
+        workdayBonus: { passiveListeningMinutes: 0 },
+        stretchEnabled: true,
+        stretchStrategy: "same_focus",
+      },
+      credits: [],
+      summary: {
+        standardCoreMinutes: 175,
+        energyAdjustedCoreMinutes: 175,
+        appliedCoreCreditMinutes: 0,
+        extraCompletedMinutes: 0,
+        capacityMinutes: 270,
+        capacityTrimmedMinutes: 0,
+        eveningCoreTargetMinutes: 175,
+        passiveReferenceMinutes: 60,
+        passiveReferenceRemainingMinutes: 60,
+      },
+      adjustmentCodes: ["stretch_enabled"],
+      stretch: {
+        enabled: true,
+        strategy: "same_focus",
+        budgetMinutes: 95,
+        plannedMinutes: 40,
+      },
+    };
+    stretchRecord.tasks.push({
+      id: "stretch-momo",
+      title: "Stretch Momo",
+      category: "momo",
+      plannedMinutes: 40,
+      actualMinutes: 25,
+      completed: false,
+      isCore: false,
+      isEveningTask: true,
+      notes: "",
+      planRole: "stretch",
+      capacityKind: "stretch",
+      statusRole: "optional",
+    });
+
+    render(<StatsPage appData={{ data: { records: { [stretchRecord.date]: stretchRecord } } }} />);
+
+    const stretchRegion = screen.getByRole("region", { name: /optional stretch/i });
+    expect(stretchRegion).toBeTruthy();
+    expect(stretchRegion.textContent).toContain("No penalty");
+    expect(stretchRegion.textContent).toContain("25");
+    expect(stretchRegion.textContent).toContain("minutes");
+    expect(stretchRegion.textContent).toContain("1");
+    expect(stretchRegion.textContent).toContain("enabled days");
+    expect(stretchRegion.textContent).toContain("active days");
+  });
 });

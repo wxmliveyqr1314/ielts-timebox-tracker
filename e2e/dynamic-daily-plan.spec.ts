@@ -70,11 +70,30 @@ test("generates a capacity-aware mobile plan from completed-earlier inputs", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await generateInitialDictationPlan(page);
 
-  await expect(summaryValue(page, "Standard target")).toHaveText("175m");
-  await expect(summaryValue(page, "Completed credit")).toHaveText("-50m");
+  await expect(summaryValue(page, "Mode target")).toHaveText("175m");
+  await expect(summaryValue(page, "Completed earlier")).toHaveText("-50m");
   await expect(summaryValue(page, "Tonight focused")).toHaveText("125m");
   await expect(page.getByText("Reference already met. Extra listening stays optional.")).toBeVisible();
 
+  await expectNoHorizontalOverflow(page);
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("optional stretch stays separate from baseline status on mobile", async ({ page }) => {
+  const runtimeErrors = watchRuntimeErrors(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await generateInitialDictationPlan(page);
+
+  await expect(summaryValue(page, "Tonight focused")).toHaveText("125m");
+  await page.getByRole("switch", { name: "Add optional stretch" }).click();
+  await page.getByRole("button", { name: "Same Focus" }).click();
+  await page.getByRole("button", { name: "Preview stretch changes" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Review plan changes" });
+  await dialog.getByRole("button", { name: "Apply regenerated plan" }).click();
+
+  await expect(page.getByRole("region", { name: "Optional stretch tasks" })).toBeVisible();
+  await expect(page.getByText("0 penalty if skipped")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });
@@ -124,8 +143,8 @@ test("persists the generated summary and reports completed-earlier totals once",
   await generateInitialDictationPlan(page);
 
   await page.reload();
-  await expect(summaryValue(page, "Standard target")).toHaveText("175m");
-  await expect(summaryValue(page, "Completed credit")).toHaveText("-50m");
+  await expect(summaryValue(page, "Mode target")).toHaveText("175m");
+  await expect(summaryValue(page, "Completed earlier")).toHaveText("-50m");
   await expect(summaryValue(page, "Tonight focused")).toHaveText("125m");
 
   await page.getByRole("button", { name: "History" }).click();
@@ -133,7 +152,7 @@ test("persists the generated summary and reports completed-earlier totals once",
   const historicalSummary = page.getByRole("region", { name: "Historical plan summary" });
   await expect(historicalSummary.getByText("Workday", { exact: true })).toBeVisible();
   await expect(
-    historicalSummary.getByText("Completed earlier", { exact: true }).locator("..").locator("span").last(),
+    historicalSummary.getByText("Completed earlier", { exact: true }).first().locator("..").locator("span").last(),
   ).toHaveText("135m");
 
   await page.getByRole("button", { name: "Stats" }).click();
