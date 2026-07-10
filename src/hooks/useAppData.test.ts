@@ -34,6 +34,8 @@ describe('useAppData', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 
@@ -83,5 +85,62 @@ describe('useAppData', () => {
     clearData();
     expect(Object.keys(mockStates[0].data.records).length).toBe(0);
     expect(mockStates[0].data.sync).toBeUndefined();
+  });
+
+  it('saveRewardGoal creates reward settings with generated metadata', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-10T08:00:00.000Z'));
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'reward-goal-1') });
+
+    const { saveRewardGoal } = useAppData();
+
+    saveRewardGoal({
+      title: 'Hotpot dinner',
+      targetPoints: 20,
+      note: 'After a solid study streak',
+    });
+
+    expect(mockStates[0].data.rewards).toEqual({
+      schemaVersion: 1,
+      activeGoal: {
+        id: 'reward-goal-1',
+        title: 'Hotpot dinner',
+        targetPoints: 20,
+        note: 'After a solid study streak',
+        createdAt: '2026-07-10T08:00:00.000Z',
+      },
+    });
+  });
+
+  it('saveRewardGoal updates an existing active goal without changing its identity', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-10T08:00:00.000Z'));
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'reward-goal-1') });
+
+    const { saveRewardGoal } = useAppData();
+
+    saveRewardGoal({ title: 'Hotpot dinner', targetPoints: 20 });
+    vi.setSystemTime(new Date('2026-07-11T08:00:00.000Z'));
+    saveRewardGoal({ title: 'New headphones', targetPoints: 30, note: '' });
+
+    expect(mockStates[0].data.rewards?.activeGoal).toEqual({
+      id: 'reward-goal-1',
+      title: 'New headphones',
+      targetPoints: 30,
+      createdAt: '2026-07-10T08:00:00.000Z',
+    });
+  });
+
+  it('clearRewardGoal removes only the active reward goal', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-10T08:00:00.000Z'));
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'reward-goal-1') });
+
+    const { saveRewardGoal, clearRewardGoal } = useAppData();
+
+    saveRewardGoal({ title: 'Hotpot dinner', targetPoints: 20 });
+    clearRewardGoal();
+
+    expect(mockStates[0].data.rewards).toEqual({ schemaVersion: 1 });
   });
 });

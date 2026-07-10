@@ -199,6 +199,12 @@ export interface RewardGoal {
   completedAt?: string;
 }
 
+export interface RewardGoalDraft {
+  title: string;
+  targetPoints: number;
+  note?: string;
+}
+
 export interface RewardSettings {
   schemaVersion: 1;
   activeGoal?: RewardGoal;

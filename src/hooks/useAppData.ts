@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AppState, DailyRecord } from "../types";
+import { AppState, DailyRecord, RewardGoalDraft } from "../types";
 import { normalizeDateString } from "../utils/date";
 
 const STORAGE_KEY = "ielts_timebox_state_v2";
@@ -15,6 +15,10 @@ export function getOrCreateDeviceId(): string {
     localStorage.setItem("ielts_timebox_device_id", id);
   }
   return id;
+}
+
+function createId(): string {
+  return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
 }
 
 const loadState = () => {
@@ -120,5 +124,50 @@ export function useAppData() {
     setAppState(prev => ({ ...prev, data: nextState }));
   };
 
-  return { data, updateRecord, deleteRecord, importData, clearData, replaceData };
+  const saveRewardGoal = (draft: RewardGoalDraft) => {
+    setHasMutated(true);
+    setAppState((prev) => {
+      const existingGoal = prev.data.rewards?.activeGoal;
+      const note = draft.note?.trim();
+
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          rewards: {
+            schemaVersion: 1,
+            activeGoal: {
+              id: existingGoal?.id ?? createId(),
+              title: draft.title.trim(),
+              targetPoints: draft.targetPoints,
+              ...(note ? { note } : {}),
+              createdAt: existingGoal?.createdAt ?? new Date().toISOString(),
+            },
+          },
+        },
+      };
+    });
+  };
+
+  const clearRewardGoal = () => {
+    setHasMutated(true);
+    setAppState((prev) => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        rewards: { schemaVersion: 1 },
+      },
+    }));
+  };
+
+  return {
+    data,
+    updateRecord,
+    deleteRecord,
+    importData,
+    clearData,
+    replaceData,
+    saveRewardGoal,
+    clearRewardGoal,
+  };
 }
