@@ -28,6 +28,24 @@ function MetricCard({ title, icon, children }: { title: string, icon: React.Reac
   );
 }
 
+function getRewardGoalForDisplay(goal: unknown) {
+  if (!goal || typeof goal !== "object") return undefined;
+
+  const candidate = goal as { id?: unknown; title?: unknown; targetPoints?: unknown; note?: unknown; createdAt?: unknown };
+  const targetPoints = Number(candidate.targetPoints);
+  if (typeof candidate.id !== "string") return undefined;
+  if (typeof candidate.title !== "string" || candidate.title.trim().length === 0) return undefined;
+  if (!Number.isFinite(targetPoints) || targetPoints <= 0) return undefined;
+
+  return {
+    id: candidate.id,
+    title: candidate.title.trim(),
+    targetPoints,
+    note: typeof candidate.note === "string" ? candidate.note : undefined,
+    createdAt: typeof candidate.createdAt === "string" ? candidate.createdAt : undefined,
+  };
+}
+
 export function StatsPage({ appData }: { appData: any }) {
   const allRecords = sortRecordsByDateDesc(
     Object.values(appData.data.records as Record<string, DailyRecord>)
@@ -43,7 +61,7 @@ export function StatsPage({ appData }: { appData: any }) {
   const stretchStats = getStretchStats(appData.data.records as Record<string, DailyRecord>);
   const rewardSummary = calculateRewardSummary(
     allRecords,
-    appData.data.rewards?.activeGoal,
+    getRewardGoalForDisplay(appData.data.rewards?.activeGoal),
   );
   const rewardProgressPercent = Math.round((rewardSummary.goalProgressRatio || 0) * 100);
 

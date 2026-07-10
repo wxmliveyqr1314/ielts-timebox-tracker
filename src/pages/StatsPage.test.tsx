@@ -196,4 +196,30 @@ describe("StatsPage", () => {
     expect(rewardRegion.textContent).toContain("3.5 remaining");
     expect(rewardRegion.textContent).toContain("30%");
   });
+
+  it("falls back safely when reward goal settings are malformed", () => {
+    render(
+      <StatsPage
+        appData={{
+          data: {
+            records: makeStatsRecords(),
+            rewards: {
+              schemaVersion: 1,
+              activeGoal: {
+                id: "goal-1",
+                title: { bad: "shape" },
+                targetPoints: 5,
+                createdAt: "2026-07-10T00:00:00.000Z",
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    const rewardRegion = screen.getByRole("region", { name: /reward points/i });
+
+    expect(rewardRegion.textContent).toContain("Reward points");
+    expect(rewardRegion.textContent).toContain("Set a reward goal in Settings");
+  });
 });
