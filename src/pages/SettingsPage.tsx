@@ -1,6 +1,6 @@
 import { useRef, ChangeEvent, useState, useEffect, useMemo } from "react";
-import { AppState } from "../types";
-import { Download, Upload, Trash2, Cloud, Mail } from "lucide-react";
+import { AppState, RewardGoalDraft } from "../types";
+import { Download, Upload, Trash2, Cloud, Mail, Gift } from "lucide-react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from "../utils/version";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { format } from "date-fns";
@@ -35,6 +35,8 @@ export function SettingsPage({
     importData: (data: AppState) => void;
     clearData: () => void;
     replaceData: (data: AppState) => void;
+    saveRewardGoal: (draft: RewardGoalDraft) => void;
+    clearRewardGoal: () => void;
   };
   auth: ReturnType<typeof useSupabaseAuth>;
   wallpaper: UseWallpaperResult;
@@ -120,6 +122,24 @@ export function SettingsPage({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const activeRewardGoal = appData.data.rewards?.activeGoal;
+  const [rewardTitle, setRewardTitle] = useState(activeRewardGoal?.title ?? "");
+  const [rewardTargetPoints, setRewardTargetPoints] = useState(
+    activeRewardGoal ? String(activeRewardGoal.targetPoints) : "",
+  );
+  const [rewardNote, setRewardNote] = useState(activeRewardGoal?.note ?? "");
+  const [rewardNotice, setRewardNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRewardTitle(activeRewardGoal?.title ?? "");
+    setRewardTargetPoints(activeRewardGoal ? String(activeRewardGoal.targetPoints) : "");
+    setRewardNote(activeRewardGoal?.note ?? "");
+  }, [
+    activeRewardGoal?.id,
+    activeRewardGoal?.title,
+    activeRewardGoal?.targetPoints,
+    activeRewardGoal?.note,
+  ]);
 
   const handleSync = async () => {
     if (!online) {
@@ -170,6 +190,36 @@ export function SettingsPage({
     const lsr = appData.data.sync?.lastSyncResult;
     if (!lsr) return "No recent sync result";
     return formatSyncResult(lsr.uploaded, lsr.downloaded, lsr.skipped);
+  };
+
+  const handleSaveRewardGoal = () => {
+    const title = rewardTitle.trim();
+    const note = rewardNote.trim();
+    const targetPoints = Number(rewardTargetPoints);
+
+    if (!title) {
+      setRewardNotice("Please enter a reward title.");
+      return;
+    }
+    if (!Number.isFinite(targetPoints) || targetPoints <= 0) {
+      setRewardNotice("Target points must be greater than 0.");
+      return;
+    }
+
+    appData.saveRewardGoal({
+      title,
+      targetPoints,
+      note: note || undefined,
+    });
+    setRewardNotice("Reward goal saved.");
+  };
+
+  const handleClearRewardGoal = () => {
+    appData.clearRewardGoal();
+    setRewardTitle("");
+    setRewardTargetPoints("");
+    setRewardNote("");
+    setRewardNotice("Reward goal cleared.");
   };
 
   const triggerSync = () => {
@@ -436,6 +486,88 @@ export function SettingsPage({
         </div>
 
         <WallpaperSettings wallpaper={wallpaper} signedIn={!!session} online={online} />
+
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 mt-8">
+          Reward Goal
+        </h2>
+
+        <div className="p-4 bg-slate-900 rounded-2xl text-white shadow-lg border border-white/5 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 rounded-lg bg-amber-400/10 p-2 text-amber-300">
+              <Gift className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold">Active Reward</p>
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Set one real-world reward target. Points will be calculated from daily completion in Stats.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            <label className="grid gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Reward title
+              <input
+                aria-label="Reward title"
+                value={rewardTitle}
+                onChange={(e) => setRewardTitle(e.target.value)}
+                maxLength={60}
+                placeholder="Hotpot dinner"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm normal-case tracking-normal text-white placeholder:text-slate-600 focus:border-amber-400 focus:outline-none"
+              />
+            </label>
+
+            <label className="grid gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Target points
+              <input
+                aria-label="Target points"
+                type="number"
+                min="1"
+                step="0.1"
+                value={rewardTargetPoints}
+                onChange={(e) => setRewardTargetPoints(e.target.value)}
+                placeholder="20"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm normal-case tracking-normal text-white placeholder:text-slate-600 focus:border-amber-400 focus:outline-none"
+              />
+            </label>
+
+            <label className="grid gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Reward note
+              <textarea
+                aria-label="Reward note"
+                value={rewardNote}
+                onChange={(e) => setRewardNote(e.target.value)}
+                maxLength={120}
+                placeholder="Why this reward matters"
+                rows={2}
+                className="w-full resize-none rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm normal-case tracking-normal text-white placeholder:text-slate-600 focus:border-amber-400 focus:outline-none"
+              />
+            </label>
+          </div>
+
+          {rewardNotice && (
+            <p className="text-[10px] text-amber-300">{rewardNotice}</p>
+          )}
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={handleSaveRewardGoal}
+              className="flex-1 rounded-lg bg-amber-400/15 px-4 py-2.5 text-sm font-bold text-amber-300 transition-colors hover:bg-amber-400/25"
+            >
+              Save Reward Goal
+            </button>
+            {activeRewardGoal && (
+              <button
+                type="button"
+                onClick={handleClearRewardGoal}
+                className="flex-1 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-bold text-slate-300 transition-colors hover:bg-slate-700"
+              >
+                Clear Reward Goal
+              </button>
+            )}
+          </div>
+        </div>
 
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 mt-8">
           Data Health
