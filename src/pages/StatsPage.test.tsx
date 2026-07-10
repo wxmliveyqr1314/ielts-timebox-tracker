@@ -166,4 +166,34 @@ describe("StatsPage", () => {
     expect(stretchRegion.textContent).toContain("enabled days");
     expect(stretchRegion.textContent).toContain("active days");
   });
+
+  it("renders reward points and active goal progress", () => {
+    render(
+      <StatsPage
+        appData={{
+          data: {
+            records: makeStatsRecords(),
+            rewards: {
+              schemaVersion: 1,
+              activeGoal: {
+                id: "goal-1",
+                title: "Hotpot dinner",
+                targetPoints: 5,
+                note: "After steady study",
+                createdAt: "2026-07-10T00:00:00.000Z",
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    const rewardRegion = screen.getByRole("region", { name: /reward points/i });
+
+    expect(rewardRegion.textContent).toContain("Reward points");
+    expect(rewardRegion.textContent).toContain("1.5");
+    expect(rewardRegion.textContent).toContain("Hotpot dinner");
+    expect(rewardRegion.textContent).toContain("3.5 remaining");
+    expect(rewardRegion.textContent).toContain("30%");
+  });
 });

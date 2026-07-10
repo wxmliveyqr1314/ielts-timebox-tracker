@@ -14,6 +14,7 @@ import { Flame, Clock, Mic, Activity, Moon, BookOpen, Headphones, ShieldAlert, A
 import { cn } from "../lib/utils";
 import { sortRecordsByDateDesc } from "../utils/date";
 import { formatMinutes } from "../utils/display";
+import { calculateRewardSummary, formatPoints } from "../rewards/rewardPoints";
 
 function MetricCard({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
   return (
@@ -40,6 +41,11 @@ export function StatsPage({ appData }: { appData: any }) {
   const sleepStats = getSleepControlStats(recent7);
   const speakingStats = getSpeakingStats(recent7);
   const stretchStats = getStretchStats(appData.data.records as Record<string, DailyRecord>);
+  const rewardSummary = calculateRewardSummary(
+    allRecords,
+    appData.data.rewards?.activeGoal,
+  );
+  const rewardProgressPercent = Math.round((rewardSummary.goalProgressRatio || 0) * 100);
 
   const footerMessage = (
     <div className="text-center text-xs font-semibold text-slate-400 px-4 mt-2">
@@ -110,6 +116,61 @@ export function StatsPage({ appData }: { appData: any }) {
       </div>
 
       {/* 状态分布 */}
+      <section
+        className="wallpaper-surface rounded-lg border border-slate-200 bg-white/80 p-4 shadow-sm"
+        role="region"
+        aria-label="Reward points"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+            <Award className="w-4 h-4 text-amber-500" />
+            Reward points
+          </h2>
+          <span className="shrink-0 text-[10px] font-semibold text-slate-400">
+            Motivation only
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p className="font-mono text-lg font-bold text-slate-800">{formatPoints(rewardSummary.totalPoints)}</p>
+            <p className="text-[10px] text-slate-500">total</p>
+          </div>
+          <div>
+            <p className="font-mono text-lg font-bold text-slate-800">{formatPoints(rewardSummary.recent7Points)}</p>
+            <p className="text-[10px] text-slate-500">last 7 days</p>
+          </div>
+          <div>
+            <p className="font-mono text-lg font-bold text-slate-800">{formatPoints(rewardSummary.averagePointsPerCompletedDay)}</p>
+            <p className="text-[10px] text-slate-500">avg / active day</p>
+          </div>
+        </div>
+        {rewardSummary.goalTitle ? (
+          <div className="mt-4 rounded-lg bg-slate-100/60 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-slate-800">{rewardSummary.goalTitle}</p>
+                <p className="text-[10px] text-slate-500">
+                  {formatPoints(rewardSummary.pointsRemaining || 0)} remaining
+                </p>
+              </div>
+              <span className="shrink-0 font-mono text-sm font-bold text-indigo-600">
+                {rewardProgressPercent}%
+              </span>
+            </div>
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-amber-500 transition-all duration-700 ease-out"
+                style={{ width: `${rewardProgressPercent}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-slate-500">
+            Set a reward goal in Settings to track progress toward something tangible.
+          </p>
+        )}
+      </section>
+
       <section
         className="wallpaper-surface rounded-lg border border-slate-200 bg-white/80 p-4 shadow-sm"
         role="region"
