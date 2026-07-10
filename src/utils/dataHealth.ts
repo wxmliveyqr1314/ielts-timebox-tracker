@@ -38,6 +38,10 @@ function planInputsMatch(record: Record<string, any>, input: any): boolean {
   );
 }
 
+function isValidDateString(value: unknown): value is string {
+  return typeof value === "string" && !Number.isNaN(Date.parse(value));
+}
+
 export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
   const issues: DataHealthIssue[] = [];
   let errors = 0;
@@ -242,6 +246,52 @@ export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
         addIssue("error", "INVALID_DELETED_RECORD_KEY", `Deleted record key '${delKey}' is not a valid date format`, delKey);
       }
     });
+  }
+
+  if (appData.rewards !== undefined) {
+    const rewards = appData.rewards;
+    if (!isObject(rewards)) {
+      addIssue("error", "REWARDS_NOT_OBJECT", "Reward settings are not a valid object");
+    } else {
+      if (rewards.schemaVersion !== 1) {
+        addIssue("error", "REWARDS_INVALID_SCHEMA_VERSION", "Reward settings schema version is invalid");
+      }
+
+      if (rewards.activeGoal !== undefined) {
+        const goal = rewards.activeGoal;
+        if (!isObject(goal)) {
+          addIssue("error", "REWARD_GOAL_NOT_OBJECT", "Active reward goal is not a valid object");
+        } else {
+          if (typeof goal.id !== "string" || goal.id.trim().length === 0) {
+            addIssue("error", "REWARD_GOAL_INVALID_ID", "Reward goal id is missing or invalid");
+          }
+          if (typeof goal.title !== "string" || goal.title.trim().length === 0) {
+            addIssue("error", "REWARD_GOAL_INVALID_TITLE", "Reward goal title is missing or invalid");
+          }
+          if (
+            typeof goal.targetPoints !== "number" ||
+            !Number.isFinite(goal.targetPoints) ||
+            goal.targetPoints <= 0 ||
+            goal.targetPoints > 999
+          ) {
+            addIssue(
+              "error",
+              "REWARD_GOAL_INVALID_TARGET_POINTS",
+              "Reward goal target points must be between 1 and 999",
+            );
+          }
+          if (goal.note !== undefined && (typeof goal.note !== "string" || goal.note.length > 120)) {
+            addIssue("warning", "REWARD_GOAL_NOTE_TOO_LONG", "Reward goal note is too long");
+          }
+          if (!isValidDateString(goal.createdAt)) {
+            addIssue("error", "REWARD_GOAL_INVALID_CREATED_AT", "Reward goal createdAt is missing or invalid");
+          }
+          if (goal.completedAt !== undefined && !isValidDateString(goal.completedAt)) {
+            addIssue("error", "REWARD_GOAL_INVALID_COMPLETED_AT", "Reward goal completedAt is invalid");
+          }
+        }
+      }
+    }
   }
 
   return {

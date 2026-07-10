@@ -263,4 +263,57 @@ describe("analyzeAppDataHealth", () => {
     expect(codes).toContain("PLAN_STRETCH_INVALID_BUDGET");
     expect(codes).toContain("PLAN_STRETCH_INVALID_PLANNED");
   });
+
+  it("accepts valid reward settings", () => {
+    const report = analyzeAppDataHealth({
+      records: {},
+      rewards: {
+        schemaVersion: 1,
+        activeGoal: {
+          id: "goal-1",
+          title: "Hotpot dinner",
+          targetPoints: 20,
+          note: "Weekend reward",
+          createdAt: "2026-07-10T00:00:00.000Z",
+        },
+      },
+    } as any);
+
+    expect(report.ok).toBe(true);
+  });
+
+  it("identifies malformed reward settings", () => {
+    const report = analyzeAppDataHealth({
+      records: {},
+      rewards: "bad",
+    } as any);
+
+    expect(report.issues.some((issue) => issue.code === "REWARDS_NOT_OBJECT")).toBe(true);
+  });
+
+  it("identifies invalid reward goal fields", () => {
+    const report = analyzeAppDataHealth({
+      records: {},
+      rewards: {
+        schemaVersion: 2,
+        activeGoal: {
+          id: "",
+          title: "",
+          targetPoints: 1000,
+          note: "x".repeat(121),
+          createdAt: "bad-date",
+          completedAt: "also-bad",
+        },
+      },
+    } as any);
+    const codes = report.issues.map((issue) => issue.code);
+
+    expect(codes).toContain("REWARDS_INVALID_SCHEMA_VERSION");
+    expect(codes).toContain("REWARD_GOAL_INVALID_ID");
+    expect(codes).toContain("REWARD_GOAL_INVALID_TITLE");
+    expect(codes).toContain("REWARD_GOAL_INVALID_TARGET_POINTS");
+    expect(codes).toContain("REWARD_GOAL_NOTE_TOO_LONG");
+    expect(codes).toContain("REWARD_GOAL_INVALID_CREATED_AT");
+    expect(codes).toContain("REWARD_GOAL_INVALID_COMPLETED_AT");
+  });
 });

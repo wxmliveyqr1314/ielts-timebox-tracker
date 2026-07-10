@@ -190,9 +190,24 @@ export interface AppSettings {
   stopNewTaskTime: string;
 }
 
+export interface RewardGoal {
+  id: string;
+  title: string;
+  targetPoints: number;
+  note?: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface RewardSettings {
+  schemaVersion: 1;
+  activeGoal?: RewardGoal;
+}
+
 export interface AppState {
   records: Record<string, DailyRecord>;
   settings?: AppSettings;
+  rewards?: RewardSettings;
   sync?: {
     schemaVersion: 1;
     deviceId: string;
