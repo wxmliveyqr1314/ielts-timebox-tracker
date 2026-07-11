@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.2.0
+- Version: v2.3.0
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -17,6 +17,7 @@ The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 - Supabase authentication and manual cloud synchronization
 - Local-first cloud wallpaper
 - Data health and JSON backup tools
+- Reward points and one active local-first reward goal
 - Offline PWA shell with local-first features (cloud actions disabled while offline)
 
 ## Dynamic Daily Planning (v2.1 / v2.2)
@@ -32,7 +33,21 @@ v2.2 adds an optional stretch layer after the required v2.1 baseline plan.
 - Stretch can be generated as Same Focus or Balanced.
 - Stretch completion is counted in stats.
 - Incomplete stretch has no penalty.
-- Reward points are intentionally deferred to v2.3.
+- Reward points are implemented in v2.3.
+
+## v2.3 Reward Points
+
+v2.3 adds a lightweight derived reward-points layer. It does not change daily status, planning, cloud sync, or deletion behavior.
+
+- Green baseline days earn 1 point.
+- Yellow baseline days earn 0.5 points.
+- Red and Pending earn 0 baseline points.
+- Optional stretch can add up to 0.2 bonus points when enabled and completed.
+- Settings can save or clear one active local-first reward goal.
+- Stats shows total points, recent 7-day points, average points per completed day, and active goal progress.
+- Data Health validates malformed reward settings so Settings and Stats do not white-screen.
+
+Reward goal settings are local-first in v2.3 and are preserved by LocalStorage and JSON export/import. Manual Supabase daily-record sync does not sync reward goal settings yet. Points are derived from records, so deleting or editing records changes points automatically.
 
 ### Module ownership
 
@@ -43,6 +58,7 @@ v2.2 adds an optional stretch layer after the required v2.1 baseline plan.
 - `src/utils/status.ts`: dispatches records with a snapshot to dynamic status calculation and records without one to the legacy calculation.
 - `src/utils/stats.ts`: counts completed-earlier Momo, dictation, reading, and passive minutes exactly once alongside generated-task actual minutes.
 - `src/utils/dataHealth.ts`: validates optional plan snapshots read-only and never rewrites user data.
+- `src/rewards/rewardPoints.ts`: pure reward scoring, goal validation, and reward summary helpers.
 
 ### Capacity defaults
 
@@ -114,6 +130,7 @@ Normal task additions must not add title-string branches to `planEngine.ts`.
 - The browser smoke suite uses Chromium only.
 - Supabase Free projects may pause after inactivity.
 - Real-device installation remains a manual release check.
+- Reward goal settings are local-only until future settings sync; v2.3 supports one active goal and has no redeem/archive timeline yet.
 - Dynamic planning intentionally excludes AI-generated plans, calendar/workweek inference, cross-category substitution, automatic regeneration, passive-listening enforcement, and recalculation of old historical statuses.
 
 ## Development Workflow
