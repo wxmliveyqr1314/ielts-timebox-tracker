@@ -1,5 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { TASK_REGISTRY } from "../../planning/taskRegistry";
 import type { DayContext, TaskCheckItem, WorkdayBonus } from "../../types";
 
 interface PlanSectionsProps {
@@ -20,6 +21,14 @@ const BONUS_ROWS: Array<{
   { key: "passiveListeningMinutes", label: "Passive listening" },
 ];
 
+function getTaskGuidance(task: TaskCheckItem) {
+  if (!task.definitionId) {
+    return undefined;
+  }
+
+  return TASK_REGISTRY[task.definitionId];
+}
+
 function TaskRow({
   task,
   onToggleTask,
@@ -31,6 +40,7 @@ function TaskRow({
   onUpdateMinutes: (taskId: string, minutes: number) => void;
 }) {
   const isControl = task.capacityKind === "control" || task.category === "sleep_control";
+  const guidance = getTaskGuidance(task);
 
   return (
     <div
@@ -66,6 +76,16 @@ function TaskRow({
           <span className="mt-1 block text-[10px] font-bold uppercase text-slate-400">
             {task.carriedForward ? "Earlier progress" : `Plan: ${task.plannedMinutes}m`}
           </span>
+          {guidance?.description && (
+            <span className="mt-2 block text-xs leading-relaxed text-slate-500">
+              {guidance.description}
+            </span>
+          )}
+          {guidance?.doneCriteria && (
+            <span className="mt-1 block text-[10px] font-semibold leading-relaxed text-slate-400">
+              Done: {guidance.doneCriteria}
+            </span>
+          )}
         </span>
       </button>
 
