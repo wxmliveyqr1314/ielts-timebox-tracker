@@ -143,6 +143,72 @@ describe("analyzeAppDataHealth", () => {
     expect(report.issues.some(i => i.code === "TASK_INVALID_ACTUAL_MINUTES")).toBe(true);
   });
 
+  it("accepts missing or valid speaking bonus minutes", () => {
+    const withoutSpeaking = createValidRecord("2026-05-09");
+    const withSpeaking = createValidRecord("2026-05-10");
+    withSpeaking.workdayBonus.speakingMinutes = 12;
+
+    const report = analyzeAppDataHealth({
+      records: {
+        [withoutSpeaking.date]: withoutSpeaking,
+        [withSpeaking.date]: withSpeaking,
+      },
+    });
+
+    expect(report.ok).toBe(true);
+    expect(report.issues.some((issue) => issue.code === "WORKDAY_BONUS_INVALID_SPEAKING_MINUTES")).toBe(false);
+  });
+
+  it("identifies invalid speaking bonus minutes", () => {
+    const rec = createValidRecord("2026-05-09");
+    (rec.workdayBonus as any).speakingMinutes = -1;
+
+    const report = analyzeAppDataHealth({
+      records: {
+        [rec.date]: rec,
+      },
+    });
+
+    expect(report.issues.some((issue) => issue.code === "WORKDAY_BONUS_INVALID_SPEAKING_MINUTES")).toBe(true);
+  });
+
+  it("keeps legacy mixed-review tasks valid", () => {
+    const rec = createValidRecord("2026-05-09");
+    rec.tasks = [{
+      id: "legacy-mixed-review",
+      title: "Dictation or light reading review",
+      category: "other",
+      plannedMinutes: 10,
+      actualMinutes: 0,
+      completed: false,
+      isCore: true,
+      isEveningTask: true,
+      definitionId: "mixed-review",
+    }];
+
+    const report = analyzeAppDataHealth({
+      records: {
+        [rec.date]: rec,
+      },
+    });
+
+    expect(report.ok).toBe(true);
+  });
+
+  it("warns when a task references an unknown definition id", () => {
+    const rec = createValidRecord("2026-05-09");
+    rec.tasks[0].definitionId = "unknown-definition";
+
+    const report = analyzeAppDataHealth({
+      records: {
+        [rec.date]: rec,
+      },
+    });
+    const issue = report.issues.find((candidate) => candidate.code === "TASK_UNKNOWN_DEFINITION_ID");
+
+    expect(issue?.severity).toBe("warning");
+  });
+
   it("identifies invalid deletedRecords key", () => {
     const appData: AppState = {
       records: {},
