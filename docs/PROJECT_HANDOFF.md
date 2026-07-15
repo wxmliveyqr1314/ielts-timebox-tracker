@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.4.0
+- Version: v2.5.0
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -19,6 +19,7 @@ The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 - Data health and JSON backup tools
 - Reward points and one active local-first reward goal
 - IELTS task guidance metadata and Speaking Bonus credit
+- Study Plan task guide page
 - Offline PWA shell with local-first features (cloud actions disabled while offline)
 
 ## Dynamic Daily Planning (v2.1 / v2.2)
@@ -112,6 +113,19 @@ Passive listening is a separate 60-minute reference. It can exceed 60 minutes, d
 4. Extend `TaskCategory` and reporting tests only when the task introduces a genuinely new reporting category.
 
 Normal task additions must not add title-string branches to `planEngine.ts`.
+
+## v2.5 Study Plan Task Guide
+
+v2.5 adds a read-only Study tab that turns the task registry into an in-app guide.
+
+- Bottom navigation includes Daily, Study, History, Stats, and Settings.
+- Study Plan shows total tasks, focused tasks, and reward-eligible tasks.
+- Tasks are grouped by learning area so the user can review the current IELTS routine without generating a day.
+- Task cards expose title, description, instruction, done criteria, and metadata badges when the registry provides them.
+- The page is presentation-only. It does not mutate records, reward settings, cloud sync state, wallpaper state, or local storage.
+- The implementation reads from `TASK_REGISTRY` through the task-library view model, so future registry metadata improvements automatically flow into Study Plan.
+
+Study Plan is not yet a long-term IELTS Roadmap. Future work can add IELTS exam-specific tasks, an Error Log, weekly cycles, and a goal-oriented roadmap after the v2.5 task guide proves useful in daily use.
 
 ## Quality Commands
 
