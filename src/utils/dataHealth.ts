@@ -1,4 +1,5 @@
 import { AppState, DataHealthReport, DataHealthIssue, DataHealthIssueSeverity } from "../types";
+import { TASK_REGISTRY } from "../planning/taskRegistry";
 import { normalizeDateString } from "./date";
 
 const PLAN_SUMMARY_FIELDS = [
@@ -24,6 +25,7 @@ function normalizeBonus(value: unknown) {
     momoMinutes: bonus.momoMinutes ?? 0,
     dictationMinutes: bonus.dictationMinutes ?? 0,
     readingMinutes: bonus.readingMinutes ?? 0,
+    speakingMinutes: bonus.speakingMinutes ?? 0,
   };
 }
 
@@ -40,6 +42,10 @@ function planInputsMatch(record: Record<string, any>, input: any): boolean {
 
 function isValidDateString(value: unknown): value is string {
   return typeof value === "string" && !Number.isNaN(Date.parse(value));
+}
+
+function isValidOptionalMinutes(value: unknown): boolean {
+  return value === undefined || (typeof value === "number" && Number.isFinite(value) && value >= 0);
 }
 
 export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
@@ -113,6 +119,16 @@ export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
       addIssue("error", "INVALID_DAY_TYPE", `Unknown dayType '${record.dayType}'`, key);
     }
 
+    const workdayBonus: Record<string, unknown> = isObject(record.workdayBonus) ? record.workdayBonus : {};
+    if (!isValidOptionalMinutes(workdayBonus.speakingMinutes)) {
+      addIssue(
+        "error",
+        "WORKDAY_BONUS_INVALID_SPEAKING_MINUTES",
+        "Speaking bonus minutes must be a non-negative finite number",
+        key,
+      );
+    }
+
     if (!Array.isArray(record.tasks)) {
       addIssue("error", "TASKS_NOT_ARRAY", `tasks is not an array`, key);
     } else {
@@ -125,6 +141,18 @@ export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
         }
         if (typeof task.plannedMinutes !== "number" || task.plannedMinutes < 0 || Number.isNaN(task.plannedMinutes)) {
           addIssue("error", "TASK_INVALID_PLANNED_MINUTES", `Task '${task.title || index}' has invalid plannedMinutes`, key);
+        }
+        if (
+          typeof task.definitionId === "string" &&
+          task.definitionId.trim().length > 0 &&
+          !TASK_REGISTRY[task.definitionId]
+        ) {
+          addIssue(
+            "warning",
+            "TASK_UNKNOWN_DEFINITION_ID",
+            `Task '${task.title || index}' references unknown definitionId '${task.definitionId}'`,
+            key,
+          );
         }
       });
     }

@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.3.0
+- Version: v2.4.0
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -18,6 +18,7 @@ The app is an installable Progressive Web App (PWA), not a native APK/IPA.
 - Local-first cloud wallpaper
 - Data health and JSON backup tools
 - Reward points and one active local-first reward goal
+- IELTS task guidance metadata and Speaking Bonus credit
 - Offline PWA shell with local-first features (cloud actions disabled while offline)
 
 ## Dynamic Daily Planning (v2.1 / v2.2)
@@ -48,6 +49,18 @@ v2.3 adds a lightweight derived reward-points layer. It does not change daily st
 - Data Health validates malformed reward settings so Settings and Stats do not white-screen.
 
 Reward goal settings are local-first in v2.3 and are preserved by LocalStorage and JSON export/import. Manual Supabase daily-record sync does not sync reward goal settings yet. Points are derived from records, so deleting or editing records changes points automatically.
+
+## v2.4 Task Quality Upgrade
+
+v2.4 upgrades generated tasks from labels into clearer learning actions.
+
+- Task definitions can include `description`, `instruction`, and `doneCriteria`.
+- Daily task cards show compact guidance when a generated task has a known `definitionId`.
+- The ambiguous `mixed-review` action is kept only for legacy compatibility; new plans use separate light dictation and light reading review tasks.
+- Daily Setup includes Speaking Bonus minutes completed before plan generation.
+- Speaking Bonus reduces only eligible speaking-shadowing work, not AI conversation, correction retake, or non-speaking tasks.
+- Data Health validates invalid `speakingMinutes`, tolerates missing legacy values, tolerates legacy `mixed-review`, and warns on unknown task definition IDs.
+- Status, rewards, history, local storage, and manual cloud sync stay compatible with old records.
 
 ### Module ownership
 
@@ -84,7 +97,7 @@ Passive listening is a separate 60-minute reference. It can exceed 60 minutes, d
 
 ### Completed-earlier credit and regeneration
 
-- Momo, dictation, and reading minutes reduce only their matching generated group, one minute for one minute.
+- Momo, dictation, reading, and speaking bonus minutes reduce only their matching eligible generated groups, one minute for one minute.
 - Passive minutes reduce only the displayed listening reference.
 - Excess and nonmatching minutes still count as real module study but never replace another category.
 - Matching credit is applied before priority-based capacity trimming.
