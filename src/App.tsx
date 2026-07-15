@@ -4,6 +4,7 @@ import { DailyPage } from "./pages/DailyPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { StatsPage } from "./pages/StatsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { StudyPlanPage } from "./pages/StudyPlanPage";
 import { useAppData } from "./hooks/useAppData";
 import { useSupabaseAuth } from "./hooks/useSupabaseAuth";
 import { useWallpaper } from "./hooks/useWallpaper";
@@ -20,6 +21,7 @@ export default function App() {
   return (
     <AppLayout currentTab={currentTab} onChangeTab={setCurrentTab} wallpaper={wallpaper} online={online}>
       {currentTab === "daily" && <DailyPage appData={appData} />}
+      {currentTab === "study" && <StudyPlanPage />}
       {currentTab === "history" && <HistoryPage appData={appData} />}
       {currentTab === "stats" && <StatsPage appData={appData} />}
       {currentTab === "settings" && <SettingsPage appData={appData} auth={auth} wallpaper={wallpaper} online={online} />}

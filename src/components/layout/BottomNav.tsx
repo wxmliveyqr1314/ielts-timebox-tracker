@@ -1,4 +1,4 @@
-import { Calendar, CheckSquare, BarChart2, Settings } from "lucide-react";
+import { BookOpen, Calendar, CheckSquare, BarChart2, Settings } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface BottomNavProps {
@@ -9,6 +9,7 @@ interface BottomNavProps {
 export function BottomNav({ currentTab, onChangeTab }: BottomNavProps) {
   const tabs = [
     { id: "daily", label: "Daily", icon: CheckSquare },
+    { id: "study", label: "Study", icon: BookOpen },
     { id: "history", label: "History", icon: Calendar },
     { id: "stats", label: "Stats", icon: BarChart2 },
     { id: "settings", label: "Settings", icon: Settings },
@@ -24,7 +25,7 @@ export function BottomNav({ currentTab, onChangeTab }: BottomNavProps) {
             key={tab.id}
             onClick={() => onChangeTab(tab.id)}
             className={cn(
-              "flex flex-col items-center py-3 px-4 transition-colors flex-1",
+              "min-w-0 flex-1 flex flex-col items-center py-3 px-2 transition-colors",
               isActive
                 ? "text-indigo-600"
                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50",
