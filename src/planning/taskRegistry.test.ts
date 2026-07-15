@@ -21,6 +21,27 @@ describe("TASK_REGISTRY learning metadata", () => {
     expect(definition.statusRole).toBe("required");
   });
 
+  it("defines separate light review tasks for dictation and reading", () => {
+    const dictation = getTaskDefinition("light-dictation-review");
+    const reading = getTaskDefinition("light-reading-review");
+
+    expect(dictation).toMatchObject({
+      title: "Light dictation review",
+      skill: "listening",
+      creditGroup: "dictation",
+      statusRole: "required",
+    });
+    expect(dictation.description).toContain("dictation mistakes");
+
+    expect(reading).toMatchObject({
+      title: "Light reading review",
+      skill: "reading",
+      creditGroup: "reading",
+      statusRole: "required",
+    });
+    expect(reading.description).toContain("reading notes");
+  });
+
   it("marks passive and control tasks as not reward eligible", () => {
     expect(getTaskDefinition("passive-listening").rewardEligible).toBe(false);
     expect(getTaskDefinition("sleep-stop-heavy").rewardEligible).toBe(false);

@@ -65,6 +65,21 @@ describe("focus profiles", () => {
     }
   });
 
+  it("uses explicit light review tasks instead of mixed-review in new speaking plans", () => {
+    for (const energy of ["low", "normal", "high"] as const) {
+      const definitionIds = getProfileVariant(
+        "speaking_focus",
+        energy,
+      ).entries.map((entry) => entry.definitionId);
+
+      expect(definitionIds).not.toContain("mixed-review");
+      expect(
+        definitionIds.includes("light-dictation-review") ||
+          definitionIds.includes("light-reading-review"),
+      ).toBe(true);
+    }
+  });
+
   it("returns registered definitions and rejects unknown IDs", () => {
     expect(getTaskDefinition("momo").creditGroup).toBe("momo");
     expect(() => getTaskDefinition("missing-task")).toThrow(
