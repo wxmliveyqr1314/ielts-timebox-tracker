@@ -312,6 +312,25 @@ function ConfigForm({
               placeholder="0"
             />
           </div>
+          <div>
+            <label className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1 font-bold">
+              Speaking
+            </label>
+            <input
+              aria-label="Speaking bonus minutes"
+              type="number"
+              min="0"
+              value={workdayBonus.speakingMinutes || ""}
+              onChange={(e) =>
+                setWorkdayBonus({
+                  ...workdayBonus,
+                  speakingMinutes: parseInt(e.target.value) || 0,
+                })
+              }
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm text-center font-mono"
+              placeholder="0"
+            />
+          </div>
         </div>
       </div>
 
@@ -362,6 +381,7 @@ function SetupDaily({
     momoMinutes: 0,
     dictationMinutes: 0,
     readingMinutes: 0,
+    speakingMinutes: 0,
   });
 
   const handleStart = () => {
@@ -538,6 +558,7 @@ function TrackerDaily({
         dictationMinutes: 0,
         readingMinutes: 0,
         passiveListeningMinutes: 0,
+        speakingMinutes: 0,
       },
       availableFocusedMinutes: record.availableFocusedMinutes,
       stretchEnabled: Boolean(record.planSnapshot?.stretch?.enabled),

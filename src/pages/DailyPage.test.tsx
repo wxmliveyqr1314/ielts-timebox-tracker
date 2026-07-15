@@ -90,6 +90,19 @@ describe("DailyPage dynamic planning", () => {
     expect(created.tasks.length).toBeGreaterThan(0);
   });
 
+  it("persists speaking bonus minutes into the generated plan", () => {
+    const appData = renderDaily();
+    fireEvent.change(screen.getByLabelText(/speaking bonus minutes/i), {
+      target: { value: "12" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Generate Plan" }));
+
+    const updater = appData.updateRecord.mock.calls[0][1];
+    const created = updater(undefined) as DailyRecord;
+    expect(created.workdayBonus.speakingMinutes).toBe(12);
+    expect(created.planSnapshot?.input.workdayBonus.speakingMinutes).toBe(12);
+  });
+
   it("shows capacity, mode target, credit, unused capacity, and tonight totals", () => {
     renderDaily(makeDynamicRecord());
 
