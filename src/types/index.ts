@@ -12,6 +12,16 @@ export type StretchStrategy = "same_focus" | "balanced";
 
 export type PlanRole = "baseline" | "stretch" | "carried" | "control";
 
+export type IeltsSkill =
+  | "listening"
+  | "reading"
+  | "speaking"
+  | "writing"
+  | "vocabulary"
+  | "review"
+  | "planning"
+  | "sleep";
+
 export type CreditGroup =
   | "momo"
   | "dictation"
