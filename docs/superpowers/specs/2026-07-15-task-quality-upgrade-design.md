@@ -132,6 +132,52 @@ Every active registry task should receive:
 - `formalStudy`;
 - `rewardEligible`.
 
+### Daily Task Card Copy
+
+The most important visible field is the short task description.
+
+Purpose:
+
+- reduce choice paralysis;
+- remind the user what this task means;
+- make Daily usable even when the user is tired;
+- make the task list feel like a study coach, not just a timer.
+
+Copy rules:
+
+- one or two short sentences;
+- action-oriented;
+- no long theory;
+- no hidden grading logic;
+- understandable without opening documentation;
+- stable enough to be reused in a future Study Plan / Task Library page.
+
+Initial recommended descriptions:
+
+| Task | Short description |
+| --- | --- |
+| Momo vocabulary | Complete today's Momo vocabulary review. Focus on accuracy, not speed. |
+| Dictation error review | Replay previous dictation mistakes and correct unclear sounds or spelling errors. |
+| New dictation unit | Complete one new short dictation unit, then check and mark errors. |
+| Dictation error check | Quickly verify recent dictation mistakes and repeat only the missed parts. |
+| Additional dictation practice | Continue with one extra dictation segment if the baseline already feels stable. |
+| Reading passage scan | Skim one passage and locate key information under time pressure. |
+| Long sentence analysis | Break down 3-5 difficult sentences and identify grammar structure. |
+| Synonym and vocabulary notes | Record IELTS reading paraphrases, synonyms, and useful expressions. |
+| Additional timed reading | Do one extra timed reading block without affecting today's baseline status. |
+| Speaking shadowing | Shadow one short audio clip and imitate pronunciation, rhythm, and pauses. |
+| AI speaking conversation | Complete one focused AI speaking round. Prioritize fluency over perfection. |
+| Correction and retake | Choose 1-2 weak answers, correct them, and say them again. |
+| Additional speaking simulation | Add one extra IELTS-style speaking round only if the baseline is already complete. |
+| Light dictation review | Review a small set of dictation mistakes or replay one short unclear section. |
+| Light reading review | Review a small set of reading synonyms, paraphrases, or sentence notes. |
+| Passive listening reference | Log passive listening as a reference habit. It should not reduce focused tasks. |
+| Wrap-up | Record today's result and write tomorrow's first step. |
+| No new heavy task after 22:30 | Confirm that no new heavy study task was started after 22:30. |
+| No compensatory staying up | Confirm that unfinished work was not paid back by staying up late. |
+
+The UI should display this short description near the task title. Longer `instruction` and `doneCriteria` can be shown in an expandable detail area.
+
 Suggested definitions:
 
 ### Momo vocabulary
@@ -515,4 +561,3 @@ v2.4 is complete when:
 - Old records remain readable.
 - Status, rewards, cloud sync, and history are not broken.
 - Full tests and build pass.
-
