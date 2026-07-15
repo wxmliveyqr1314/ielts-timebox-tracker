@@ -26,6 +26,7 @@ export type CreditGroup =
   | "momo"
   | "dictation"
   | "reading"
+  | "speaking"
   | "passive_listening";
 
 export type CapacityKind =
@@ -77,6 +78,7 @@ export interface WorkdayBonus {
   momoMinutes?: number;
   dictationMinutes?: number;
   readingMinutes?: number;
+  speakingMinutes?: number;
 }
 
 export interface DailyPlanInput {

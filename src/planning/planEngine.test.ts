@@ -257,7 +257,72 @@ describe("dynamic daily plan engine", () => {
         appliedMinutes: 0,
         extraMinutes: 720,
       },
+      {
+        group: "speaking",
+        enteredMinutes: 0,
+        appliedMinutes: 0,
+        extraMinutes: 0,
+      },
     ]);
+  });
+
+  it("applies speaking bonus only to reducible speaking tasks", () => {
+    const result = buildDailyPlan(
+      baseInput({
+        dayType: "speaking_focus",
+        energyLevel: "normal",
+        workdayBonus: {
+          passiveListeningMinutes: 0,
+          speakingMinutes: 15,
+        },
+      }),
+    );
+
+    expect(
+      result.tasks.some((task) => task.definitionId === "speaking-shadowing"),
+    ).toBe(false);
+    expect(
+      result.tasks.find((task) => task.definitionId === "speaking-conversation")
+        ?.plannedMinutes,
+    ).toBe(20);
+    expect(
+      result.tasks.find((task) => task.definitionId === "speaking-retake")
+        ?.plannedMinutes,
+    ).toBe(10);
+    expect(result.snapshot.credits).toContainEqual({
+      group: "speaking",
+      enteredMinutes: 15,
+      appliedMinutes: 15,
+      extraMinutes: 0,
+    });
+  });
+
+  it("keeps extra speaking bonus from reducing other task groups", () => {
+    const result = buildDailyPlan(
+      baseInput({
+        dayType: "speaking_focus",
+        energyLevel: "normal",
+        workdayBonus: {
+          passiveListeningMinutes: 0,
+          speakingMinutes: 60,
+        },
+      }),
+    );
+
+    expect(
+      result.tasks.some((task) => task.definitionId === "speaking-shadowing"),
+    ).toBe(false);
+    expect(
+      result.tasks.find(
+        (task) => task.definitionId === "light-reading-review",
+      )?.plannedMinutes,
+    ).toBe(30);
+    expect(result.snapshot.credits).toContainEqual({
+      group: "speaking",
+      enteredMinutes: 60,
+      appliedMinutes: 15,
+      extraMinutes: 45,
+    });
   });
 
   it("adds same-focus stretch tasks from unused capacity when enabled", () => {

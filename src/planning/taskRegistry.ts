@@ -249,6 +249,7 @@ export const TASK_REGISTRY: Readonly<Record<string, Readonly<TaskDefinition>>> =
         "Listen to a short clip, repeat aloud, and imitate stress, rhythm, pauses, and pronunciation.",
       doneCriteria:
         "Complete one short shadowing set or the planned minutes.",
+      creditGroup: "speaking",
       capacityKind: "focused",
       statusRole: "required",
       minMinutes: 5,
@@ -303,6 +304,7 @@ export const TASK_REGISTRY: Readonly<Record<string, Readonly<TaskDefinition>>> =
         "Use this as optional speaking practice after the required speaking tasks are done.",
       doneCriteria:
         "Complete one extra speaking round or the planned stretch minutes.",
+      creditGroup: "speaking",
       capacityKind: "focused",
       statusRole: "required",
       minMinutes: 5,
