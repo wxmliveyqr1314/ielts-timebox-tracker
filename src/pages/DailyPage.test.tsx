@@ -141,6 +141,35 @@ describe("DailyPage dynamic planning", () => {
 
     renderDaily(record);
     expect(screen.getByText("Legacy dictation task")).toBeTruthy();
+    expect(screen.queryByText(/Done:/i)).toBeNull();
+  });
+
+  it("shows concise guidance for registered task definitions", () => {
+    const record = makeDynamicRecord({
+      tasks: [{
+        id: "momo-task",
+        title: "Momo vocabulary",
+        category: "momo",
+        plannedMinutes: 20,
+        actualMinutes: 0,
+        completed: false,
+        isCore: true,
+        isEveningTask: true,
+        definitionId: "momo",
+      }],
+    });
+
+    renderDaily(record);
+    expect(
+      screen.getByText(
+        "Complete today's Momo vocabulary review. Focus on accuracy, not speed.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Done: Complete the planned minutes or today's assigned Momo review unit.",
+      ),
+    ).toBeTruthy();
   });
 
   it("keeps new sleep-control tasks synchronized with record fields", () => {
