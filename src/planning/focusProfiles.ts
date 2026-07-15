@@ -101,7 +101,7 @@ const speakingLow = variant([
   entry("speaking:momo", "momo", 30, 80, { creditOrder: 1 }),
   entry("speaking:conversation", "speaking-conversation", 20, 100),
   entry("speaking:retake", "speaking-retake", 10, 90),
-  entry("speaking:mixed", "mixed-review", 20, 60),
+  entry("speaking:dictation-review", "light-dictation-review", 20, 60),
   entry("speaking:wrap", "wrap-up", 10, 95),
 ]);
 
@@ -110,7 +110,7 @@ const speakingNormal = variant([
   entry("speaking:shadowing", "speaking-shadowing", 15, 75),
   entry("speaking:conversation", "speaking-conversation", 20, 100),
   entry("speaking:retake", "speaking-retake", 10, 90),
-  entry("speaking:mixed", "mixed-review", 30, 60),
+  entry("speaking:reading-review", "light-reading-review", 30, 60),
   entry("speaking:wrap", "wrap-up", 15, 95),
 ]);
 

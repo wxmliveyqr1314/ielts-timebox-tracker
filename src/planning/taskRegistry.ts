@@ -200,6 +200,44 @@ export const TASK_REGISTRY: Readonly<Record<string, Readonly<TaskDefinition>>> =
       formalStudy: true,
       rewardEligible: true,
     }),
+    "light-dictation-review": defineTask({
+      id: "light-dictation-review",
+      title: "Light dictation review",
+      category: "dictation_review",
+      skill: "listening",
+      description:
+        "Review a small set of dictation mistakes without starting a full new unit.",
+      instruction:
+        "Replay several recent missed words or sentences, then correct unclear sounds or spelling errors.",
+      doneCriteria:
+        "Review at least three dictation mistakes or complete the planned minutes.",
+      creditGroup: "dictation",
+      capacityKind: "focused",
+      statusRole: "required",
+      minMinutes: 5,
+      incrementMinutes: 5,
+      formalStudy: true,
+      rewardEligible: true,
+    }),
+    "light-reading-review": defineTask({
+      id: "light-reading-review",
+      title: "Light reading review",
+      category: "reading_synonym_notes",
+      skill: "reading",
+      description:
+        "Review a small set of reading notes, paraphrases, or synonym mistakes.",
+      instruction:
+        "Pick recent reading notes or wrong-answer vocabulary, then refresh the paraphrase relationship.",
+      doneCriteria:
+        "Review at least three reading notes or complete the planned minutes.",
+      creditGroup: "reading",
+      capacityKind: "focused",
+      statusRole: "required",
+      minMinutes: 5,
+      incrementMinutes: 5,
+      formalStudy: true,
+      rewardEligible: true,
+    }),
     "speaking-shadowing": defineTask({
       id: "speaking-shadowing",
       title: "Speaking shadowing",
