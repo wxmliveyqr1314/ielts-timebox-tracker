@@ -25,6 +25,7 @@ const CREDIT_GROUPS: readonly CreditGroup[] = [
   "momo",
   "dictation",
   "reading",
+  "speaking",
 ];
 
 interface WorkingEntry extends ProfileEntry {
@@ -45,6 +46,7 @@ function normalizeBonus(bonus: WorkdayBonus): Required<WorkdayBonus> {
     momoMinutes: normalizeMinutes(bonus.momoMinutes, 720),
     dictationMinutes: normalizeMinutes(bonus.dictationMinutes, 720),
     readingMinutes: normalizeMinutes(bonus.readingMinutes, 720),
+    speakingMinutes: normalizeMinutes(bonus.speakingMinutes, 720),
   };
 }
 
@@ -55,7 +57,8 @@ function getEnteredMinutes(
   if (group === "passive_listening") return bonus.passiveListeningMinutes;
   if (group === "momo") return bonus.momoMinutes;
   if (group === "dictation") return bonus.dictationMinutes;
-  return bonus.readingMinutes;
+  if (group === "reading") return bonus.readingMinutes;
+  return bonus.speakingMinutes;
 }
 
 function sumEntries(entries: WorkingEntry[]): number {
