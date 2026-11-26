@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.6.0
+- Version: v2.7.0
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -49,7 +49,7 @@ v2.3 adds a lightweight derived reward-points layer. It does not change daily st
 - Stats shows total points, recent 7-day points, average points per completed day, and active goal progress.
 - Data Health validates malformed reward settings so Settings and Stats do not white-screen.
 
-Reward goal settings are local-first in v2.3 and are preserved by LocalStorage and JSON export/import. Manual Supabase daily-record sync does not sync reward goal settings yet. Points are derived from records, so deleting or editing records changes points automatically.
+Reward goal settings are local-first and are preserved by LocalStorage and JSON export/import. Since v2.7 they also participate in manual cloud sync (see the migration requirement below). Points are derived from records, so deleting or editing records changes points automatically.
 
 ## v2.4 Task Quality Upgrade
 
@@ -181,8 +181,17 @@ Study Plan is not yet a long-term IELTS Roadmap. Future work can add IELTS exam-
 - The browser smoke suite uses Chromium only.
 - Supabase Free projects may pause after inactivity.
 - Real-device installation remains a manual release check.
-- Reward goal settings are local-only until future settings sync; v2.3 supports one active goal and has no redeem/archive timeline yet.
+- Reward cloud sync requires the v2.7 SQL migration in production; one active goal is supported, with no redeem/archive timeline yet.
 - Dynamic planning intentionally excludes AI-generated plans, calendar/workweek inference, cross-category substitution, automatic regeneration, passive-listening enforcement, and recalculation of old historical statuses.
+
+## v2.7 Reward Goal Sync (2026-11-26)
+
+- The existing Sync now action includes the active reward goal and clear markers. Optional `RewardSettings.updatedAt` / `updatedBy` metadata keeps older JSON compatible.
+- A dedicated own-user RLS table and invoker RPC atomically resolve concurrent writes. Newer modification time wins; at equal times clear wins, then device ID in C collation. An old active goal uses its original creation time on first upload.
+- Daily and reward sync report independent failures. Missing reward infrastructure preserves the local goal and does not block successful daily-record sync or falsely advance the full-sync timestamp.
+- Responses are reconciled with the request snapshot; in-flight edits and reward drafts survive. Import or local clear invalidates an earlier request's response. Further edits require another manual sync.
+- Required cloud setup: run `supabase/migrations/20261126_reward_goal_sync.sql` in the project's SQL editor. Frontend deployment alone does not apply it. See `docs/V2_7_REWARD_GOAL_SYNC_RELEASE.md` for current verification/setup status.
+- `src/utils/rewardSync.database.test.ts` executes the real migration in PGlite (test-only PostgreSQL/WASM), checking idempotency, ordering, tombstones, isolation, validation, and the two-device transport round trip. It does not certify production migration status.
 
 ## Development Workflow
 

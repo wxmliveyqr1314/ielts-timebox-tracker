@@ -4,7 +4,8 @@ import { Download, Upload, Trash2, Cloud, Mail, Gift } from "lucide-react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from "../utils/version";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { format } from "date-fns";
-import { syncDailyRecords } from "../utils/cloudSync";
+import { syncAppData } from "../utils/cloudSync";
+import type { RewardSyncStatus } from "../utils/rewardSync";
 import { supabase } from "../utils/supabaseClient";
 import { getOrCreateDeviceId } from "../hooks/useAppData";
 import { analyzeAppDataHealth } from "../utils/dataHealth";
@@ -20,11 +21,12 @@ function formatDeviceId(id: string | null) {
   return `${id.slice(0, 6)}...${id.slice(-4)}`;
 }
 
-function formatSyncResult(uploaded: number, downloaded: number, skipped: number) {
+function formatSyncResult(uploaded: number, downloaded: number, skipped: number, rewardStatus?: RewardSyncStatus) {
+  const rewardMessage = rewardStatus ? ` 奖励目标${rewardStatus === "uploaded" ? "已上传" : rewardStatus === "downloaded" ? "已下载" : "已是最新"}。` : "";
   if (uploaded === 0 && downloaded === 0) {
-    return "同步完成，没有需要更新的内容。";
+    return `学习记录已是最新。${rewardMessage}`;
   }
-  return `同步完成：上传 ${uploaded} 条，下载 ${downloaded} 条，${skipped} 条已是最新。`;
+  return `学习记录：上传 ${uploaded} 条，下载 ${downloaded} 条，${skipped} 条已是最新。${rewardMessage}`;
 }
 
 export function SettingsPage({
@@ -37,7 +39,7 @@ export function SettingsPage({
     data: AppState;
     importData: (data: AppState) => void;
     clearData: () => void;
-    replaceData: (data: AppState) => void;
+    replaceData: (data: AppState, syncedFrom?: AppState) => void;
     saveRewardGoal: (draft: RewardGoalDraft) => void;
     clearRewardGoal: () => void;
   };
@@ -124,8 +126,13 @@ export function SettingsPage({
   );
   const [rewardNote, setRewardNote] = useState(activeRewardGoal?.note ?? "");
   const [rewardNotice, setRewardNotice] = useState<string | null>(null);
+  const rewardDraftDirty = useRef(false);
 
   useEffect(() => {
+    if (rewardDraftDirty.current) {
+      setRewardNotice("目标已从云端更新，未保存的输入已保留；保存后请再次同步。");
+      return;
+    }
     setRewardTitle(activeRewardGoal?.title ?? "");
     setRewardTargetPoints(activeRewardGoal ? String(activeRewardGoal.targetPoints) : "");
     setRewardNote(activeRewardGoal?.note ?? "");
@@ -163,19 +170,20 @@ export function SettingsPage({
     setIsSyncing(true);
     setSyncResult(null);
 
-    const result = await syncDailyRecords({
-      localState: appData.data,
+    const source = JSON.parse(JSON.stringify(appData.data)) as AppState;
+    const result = await syncAppData({
+      localState: source,
       userId: session.user.id,
       deviceId,
       supabase
     });
 
-    if (result.errors.length > 0) {
-      setSyncResult("同步失败，本地数据已保留。请检查网络和云端服务后重试。");
-    } else {
-      appData.replaceData(result.mergedState);
-      setSyncResult(formatSyncResult(result.uploaded, result.downloaded, result.skipped));
-    }
+    appData.replaceData(result.mergedState, source);
+    const message = result.recordsSucceeded
+      ? formatSyncResult(result.uploaded, result.downloaded, result.skipped,
+          result.rewardsSucceeded ? result.rewardStatus : undefined)
+      : (result.rewardsSucceeded ? "奖励目标同步完成。" : "");
+    setSyncResult([message, ...result.errors].filter(Boolean).join(" "));
 
     setIsSyncing(false);
   };
@@ -184,7 +192,7 @@ export function SettingsPage({
     if (syncResult) return syncResult;
     const lsr = appData.data.sync?.lastSyncResult;
     if (!lsr) return "暂无同步结果";
-    return formatSyncResult(lsr.uploaded, lsr.downloaded, lsr.skipped);
+    return formatSyncResult(lsr.uploaded, lsr.downloaded, lsr.skipped, lsr.rewardStatus);
   };
 
   const handleSaveRewardGoal = () => {
@@ -196,25 +204,27 @@ export function SettingsPage({
       setRewardNotice("请输入奖励名称。");
       return;
     }
-    if (!Number.isFinite(targetPoints) || targetPoints <= 0) {
-      setRewardNotice("目标积分必须大于 0。");
+    if (!Number.isFinite(targetPoints) || targetPoints <= 0 || targetPoints > 999) {
+      setRewardNotice("目标积分必须大于 0，且不超过 999。");
       return;
     }
 
+    rewardDraftDirty.current = false;
     appData.saveRewardGoal({
       title,
       targetPoints,
       note: note || undefined,
     });
-    setRewardNotice("奖励目标已保存。");
+    setRewardNotice("奖励目标已保存在本机，点击“立即同步”可同步到其他设备。");
   };
 
   const handleClearRewardGoal = () => {
+    rewardDraftDirty.current = false;
     appData.clearRewardGoal();
     setRewardTitle("");
     setRewardTargetPoints("");
     setRewardNote("");
-    setRewardNotice("奖励目标已清除。");
+    setRewardNotice("奖励目标已在本机清除，点击“立即同步”可同步清除结果。");
   };
 
   const triggerSync = () => {
@@ -289,7 +299,7 @@ export function SettingsPage({
             <p className="text-sm text-slate-400 mb-6">
               请先导出一份本地 JSON 备份。<br/><br/>
               同步会按日期合并本地与云端记录，保留修改时间较新的版本。<br/><br/>
-              同步会保留本地数据，按修改时间进行合并。<br/><br/>
+              奖励目标也会同步，较新的修改或清除操作优先。<br/><br/>
               是否继续？
             </p>
             <div className="flex gap-3">
@@ -370,7 +380,8 @@ export function SettingsPage({
             </div>
 
             <p className="text-[10px] text-slate-400 mb-4">
-              学习记录采用手动同步，请点击“立即同步”上传和下载记录。
+              学习记录和奖励目标采用手动同步，请点击“立即同步”上传和下载。
+              同步期间继续修改的内容，请在完成后再次同步。
             </p>
 
             {online === false && (
@@ -495,6 +506,7 @@ export function SettingsPage({
               <p className="text-sm font-bold">当前奖励</p>
               <p className="text-[10px] text-slate-500 leading-relaxed">
                 设定一个奖励目标，统计页会根据每天的完成情况累计积分。
+                保存或清除后，点击“立即同步”同步到其他设备。
               </p>
             </div>
           </div>
@@ -505,7 +517,7 @@ export function SettingsPage({
               <input
                 aria-label="奖励名称"
                 value={rewardTitle}
-                onChange={(e) => setRewardTitle(e.target.value)}
+                onChange={(e) => { rewardDraftDirty.current = true; setRewardTitle(e.target.value); }}
                 maxLength={60}
                 placeholder="吃一顿火锅"
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm normal-case tracking-normal text-white placeholder:text-slate-600 focus:border-amber-400 focus:outline-none"
@@ -519,8 +531,9 @@ export function SettingsPage({
                 type="number"
                 min="1"
                 step="0.1"
+                max="999"
                 value={rewardTargetPoints}
-                onChange={(e) => setRewardTargetPoints(e.target.value)}
+                onChange={(e) => { rewardDraftDirty.current = true; setRewardTargetPoints(e.target.value); }}
                 placeholder="20"
                 className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm normal-case tracking-normal text-white placeholder:text-slate-600 focus:border-amber-400 focus:outline-none"
               />
@@ -531,7 +544,7 @@ export function SettingsPage({
               <textarea
                 aria-label="奖励说明"
                 value={rewardNote}
-                onChange={(e) => setRewardNote(e.target.value)}
+                onChange={(e) => { rewardDraftDirty.current = true; setRewardNote(e.target.value); }}
                 maxLength={120}
                 placeholder="写下这份奖励对你的意义"
                 rows={2}

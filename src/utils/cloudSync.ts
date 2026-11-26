@@ -1,6 +1,7 @@
 import { AppState, DailyRecord } from '../types';
 import { normalizeDateString } from './date';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { syncRewardSettings } from './rewardSync';
 
 export function mergeLocalAndCloudRecords(
   localState: AppState,
@@ -224,4 +225,35 @@ export async function syncDailyRecords({
     errors.push(err.message || 'Unknown sync error');
     return { mergedState: localState, uploaded: 0, downloaded: 0, skipped: 0, errors };
   }
+}
+
+// Keep each successful portion even when another cloud resource is unavailable.
+export async function syncAppData(options: Parameters<typeof syncDailyRecords>[0]) {
+  const records = await syncDailyRecords(options);
+  const reward = await syncRewardSettings(options.localState.rewards, options.deviceId, options.supabase);
+  const mergedState: AppState = { ...records.mergedState, rewards: reward.rewards };
+  const errors = [
+    ...(records.errors.length ? ['学习记录同步失败，本地记录已保留，请稍后重试。'] : []),
+    ...(reward.error ? [reward.error] : []),
+  ];
+  if (errors.length === 0) {
+    const completedAt = new Date().toISOString();
+    mergedState.sync = {
+      ...mergedState.sync, schemaVersion: 1, deviceId: options.deviceId,
+      lastSyncAt: completedAt,
+      lastSyncResult: {
+        uploaded: records.uploaded, downloaded: records.downloaded, skipped: records.skipped,
+        completedAt, rewardStatus: reward.status,
+      },
+    };
+  } else if (records.errors.length === 0) {
+    // Daily sync alone must not claim that the whole application synchronized.
+    mergedState.sync = {
+      ...mergedState.sync!,
+      lastSyncAt: options.localState.sync?.lastSyncAt,
+      lastSyncResult: options.localState.sync?.lastSyncResult,
+    };
+  }
+  return { ...records, mergedState, errors, rewardStatus: reward.status,
+    recordsSucceeded: records.errors.length === 0, rewardsSucceeded: !reward.error };
 }
