@@ -28,7 +28,7 @@ describe("WallpaperSettings", () => {
 
   it("disables cloud upload while signed out", () => {
     render(<WallpaperSettings wallpaper={makeWallpaper()} signedIn={false} online={true} />);
-    const btn = screen.getByRole("button", { name: /upload & apply/i }) as HTMLButtonElement;
+    const btn = screen.getByRole("button", { name: /上传并应用/i }) as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
   });
 
@@ -36,17 +36,17 @@ describe("WallpaperSettings", () => {
     const uploadAndApply = vi.fn();
     render(<WallpaperSettings wallpaper={makeWallpaper({ uploadAndApply })} signedIn online={true} />);
     const file = new File(["image"], "wallpaper.png", { type: "image/png" });
-    fireEvent.change(screen.getByLabelText(/choose wallpaper image/i), { target: { files: [file] } });
-    fireEvent.click(screen.getByRole("button", { name: /upload & apply/i }));
+    fireEvent.change(screen.getByLabelText(/选择壁纸图片/i), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: /上传并应用/i }));
     expect(uploadAndApply).toHaveBeenCalledWith(file);
   });
 
   it("clicks Remove wallpaper, asserts remove not called, clicks Remove dialog button and asserts one call", () => {
     const remove = vi.fn();
     render(<WallpaperSettings wallpaper={makeWallpaper({ active: true, imageUrl: "blob", remove })} signedIn online={true} />);
-    fireEvent.click(screen.getByRole("button", { name: /remove wallpaper/i }));
+    fireEvent.click(screen.getByRole("button", { name: /移除壁纸/i }));
     expect(remove).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: /^Remove$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^移除$/ }));
     expect(remove).toHaveBeenCalledTimes(1);
   });
 
@@ -54,7 +54,7 @@ describe("WallpaperSettings", () => {
     vi.useFakeTimers();
     const setOverlayOpacity = vi.fn();
     render(<WallpaperSettings wallpaper={makeWallpaper({ active: true, imageUrl: "blob", setOverlayOpacity })} signedIn online={true} />);
-    const slider = screen.getByLabelText(/Overlay opacity/i) as HTMLInputElement;
+    const slider = screen.getByLabelText(/遮罩深度/i) as HTMLInputElement;
     expect(slider.getAttribute("min")).toBe("25");
     expect(slider.getAttribute("max")).toBe("70");
     fireEvent.change(slider, { target: { value: "55" } });
@@ -68,39 +68,39 @@ describe("WallpaperSettings", () => {
     const uploadAndApply = vi.fn().mockResolvedValue(false);
     render(<WallpaperSettings wallpaper={makeWallpaper({ uploadAndApply })} signedIn online={true} />);
     const file = new File(["image"], "wallpaper.png", { type: "image/png" });
-    const input = screen.getByLabelText(/choose wallpaper image/i) as HTMLInputElement;
+    const input = screen.getByLabelText(/选择壁纸图片/i) as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
     // Ensure preview is shown
-    expect(screen.getByRole("button", { name: /upload & apply/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /上传并应用/i })).toBeDefined();
 
-    const btn = screen.getByRole("button", { name: /upload & apply/i });
+    const btn = screen.getByRole("button", { name: /上传并应用/i });
     await act(async () => {
       fireEvent.click(btn);
     });
 
     expect(uploadAndApply).toHaveBeenCalledWith(file);
     // Button should still be enabled because selectedFile was not cleared
-    expect((screen.getByRole("button", { name: /upload & apply/i }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: /上传并应用/i }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("clears file and preview on upload success", async () => {
     const uploadAndApply = vi.fn().mockResolvedValue(true);
     render(<WallpaperSettings wallpaper={makeWallpaper({ uploadAndApply })} signedIn online={true} />);
     const file = new File(["image"], "wallpaper.png", { type: "image/png" });
-    const input = screen.getByLabelText(/choose wallpaper image/i) as HTMLInputElement;
+    const input = screen.getByLabelText(/选择壁纸图片/i) as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(screen.getByRole("button", { name: /upload & apply/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /上传并应用/i })).toBeDefined();
 
-    const btn = screen.getByRole("button", { name: /upload & apply/i });
+    const btn = screen.getByRole("button", { name: /上传并应用/i });
     await act(async () => {
       fireEvent.click(btn);
     });
 
     expect(uploadAndApply).toHaveBeenCalledWith(file);
     // Button should be disabled because selectedFile is cleared
-    await waitFor(() => expect((screen.getByRole("button", { name: /upload & apply/i }) as HTMLButtonElement).disabled).toBe(true));
+    await waitFor(() => expect((screen.getByRole("button", { name: /上传并应用/i }) as HTMLButtonElement).disabled).toBe(true));
   });
 
   it("disables all controls and shows offline notice when online=false", () => {
@@ -112,13 +112,13 @@ describe("WallpaperSettings", () => {
       />
     );
 
-    expect(screen.getByText("Wallpaper cloud controls are unavailable offline. Your cached wallpaper remains visible.")).toBeDefined();
+    expect(screen.getByText("离线时无法修改云壁纸，已缓存的壁纸仍可显示。")).toBeDefined();
 
-    const fileInput = screen.getByLabelText(/choose wallpaper image/i) as HTMLInputElement;
-    const uploadBtn = screen.getByRole("button", { name: /upload & apply/i }) as HTMLButtonElement;
-    const enableCheckbox = screen.getByLabelText(/enable wallpaper/i) as HTMLInputElement;
-    const slider = screen.getByLabelText(/Overlay opacity/i) as HTMLInputElement;
-    const removeBtn = screen.getByRole("button", { name: /remove wallpaper/i }) as HTMLButtonElement;
+    const fileInput = screen.getByLabelText(/选择壁纸图片/i) as HTMLInputElement;
+    const uploadBtn = screen.getByRole("button", { name: /上传并应用/i }) as HTMLButtonElement;
+    const enableCheckbox = screen.getByLabelText(/启用壁纸/i) as HTMLInputElement;
+    const slider = screen.getByLabelText(/遮罩深度/i) as HTMLInputElement;
+    const removeBtn = screen.getByRole("button", { name: /移除壁纸/i }) as HTMLButtonElement;
 
     expect(fileInput.disabled).toBe(true);
     expect(uploadBtn.disabled).toBe(true);

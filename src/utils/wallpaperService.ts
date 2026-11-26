@@ -38,11 +38,11 @@ export async function replaceWallpaper(args: {
   try {
     await args.deps.saveCache(args.image.blob, preference);
   } catch {
-    cleanupWarning = "Wallpaper was synced to the cloud, but could not be cached locally.";
+    cleanupWarning = "壁纸已保存到云端，但本地缓存失败。";
   }
   if (args.previous?.wallpaperPath && args.previous.wallpaperPath !== path) {
     try { await args.deps.remove(args.previous.wallpaperPath); }
-    catch { cleanupWarning = cleanupWarning ? `${cleanupWarning} Also, the previous file could not be removed.` : "The new wallpaper is active, but the previous file could not be removed."; }
+    catch { cleanupWarning = cleanupWarning ? `${cleanupWarning} 此前的壁纸文件也未能移除。` : "新壁纸已启用，此前的壁纸文件未能移除。"; }
   }
   return { preference, cleanupWarning };
 }
@@ -58,11 +58,11 @@ export async function removeWallpaper(args: {
   try {
     await args.deps.clearCache();
   } catch {
-    cleanupWarning = "Wallpaper preference was cleared, but the local cache could not be deleted.";
+    cleanupWarning = "壁纸设置已清除，但本地缓存未能删除。";
   }
   if (args.current.wallpaperPath) {
     try { await args.deps.remove(args.current.wallpaperPath); }
-    catch { cleanupWarning = cleanupWarning ? `${cleanupWarning} Also, the cloud file could not be removed.` : "Wallpaper was disabled, but the cloud file could not be removed."; }
+    catch { cleanupWarning = cleanupWarning ? `${cleanupWarning} 云端壁纸文件也未能移除。` : "壁纸已停用，但云端文件未能移除。"; }
   }
   return { preference: cleared, cleanupWarning };
 }

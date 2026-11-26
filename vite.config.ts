@@ -30,9 +30,10 @@ export default defineConfig(({mode}) => {
           "apple-touch-icon.png",
         ],
         manifest: {
-          name: "TimeBox Tracker",
-          short_name: "TimeBox",
-          description: "Local-first IELTS study planning, tracking, and progress review.",
+          name: "TimeBox 雅思学习助手",
+          short_name: "雅思学习",
+          description: "安排雅思学习、记录每日进度，兼顾坚持与休息。",
+          lang: "zh-CN",
           start_url: "/",
           scope: "/",
           display: "standalone",

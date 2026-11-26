@@ -7,14 +7,14 @@ const MAX_EDGE = 2560;
 const MAX_PIXELS = 40_000_000;
 
 export function validateWallpaperFile(file: Pick<File, "type" | "size">): string | null {
-  if (!ALLOWED_TYPES.has(file.type)) return "Choose a JPEG, PNG, or WebP image.";
-  if (file.size > MAX_SOURCE_BYTES) return "The source image must be 15 MB or smaller.";
+  if (!ALLOWED_TYPES.has(file.type)) return "请选择 JPEG、PNG 或 WebP 图片。";
+  if (file.size > MAX_SOURCE_BYTES) return "原始图片不能超过 15 MB。";
   return null;
 }
 
 export function calculateWallpaperSize(width: number, height: number) {
   if (width <= 0 || height <= 0 || width * height > MAX_PIXELS) {
-    throw new Error("The image dimensions are not supported.");
+    throw new Error("暂不支持此图片尺寸。");
   }
   const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
   return { width: Math.round(width * scale), height: Math.round(height * scale) };
@@ -23,7 +23,7 @@ export function calculateWallpaperSize(width: number, height: number) {
 function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => blob ? resolve(blob) : reject(new Error("Could not encode the wallpaper.")),
+      (blob) => blob ? resolve(blob) : reject(new Error("无法处理壁纸图片，请换一张重试。")),
       "image/webp",
       quality,
     );
@@ -41,14 +41,14 @@ export async function processWallpaperImage(file: File): Promise<ProcessedWallpa
       canvas.width = width;
       canvas.height = height;
       const context = canvas.getContext("2d");
-      if (!context) throw new Error("Canvas is unavailable in this browser.");
+      if (!context) throw new Error("当前浏览器不支持图片处理，请更换浏览器重试。");
       context.drawImage(bitmap, 0, 0, width, height);
       const blob = await canvasToBlob(canvas, quality);
       if (blob.size <= MAX_OUTPUT_BYTES) return { blob, width, height };
       width = Math.max(1, Math.round(width * 0.85));
       height = Math.max(1, Math.round(height * 0.85));
     }
-    throw new Error("The processed wallpaper is still larger than 3 MB.");
+    throw new Error("处理后的壁纸仍超过 3 MB，请选择较小的图片。");
   } finally {
     bitmap.close();
   }

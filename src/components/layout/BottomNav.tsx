@@ -8,11 +8,11 @@ interface BottomNavProps {
 
 export function BottomNav({ currentTab, onChangeTab }: BottomNavProps) {
   const tabs = [
-    { id: "daily", label: "Daily", icon: CheckSquare },
-    { id: "study", label: "Study", icon: BookOpen },
-    { id: "history", label: "History", icon: Calendar },
-    { id: "stats", label: "Stats", icon: BarChart2 },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "daily", label: "今日", icon: CheckSquare },
+    { id: "study", label: "学习指南", icon: BookOpen },
+    { id: "history", label: "历史", icon: Calendar },
+    { id: "stats", label: "统计", icon: BarChart2 },
+    { id: "settings", label: "设置", icon: Settings },
   ];
 
   return (

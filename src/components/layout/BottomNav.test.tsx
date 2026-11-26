@@ -11,7 +11,7 @@ describe("BottomNav", () => {
 
     render(<BottomNav currentTab="daily" onChangeTab={onChangeTab} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /study/i }));
+    fireEvent.click(screen.getByRole("button", { name: /学习指南/i }));
 
     expect(onChangeTab).toHaveBeenCalledWith("study");
   });

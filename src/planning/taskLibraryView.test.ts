@@ -80,16 +80,16 @@ describe("task library view model", () => {
   });
 
   it("formats compact task metadata badges", () => {
-    expect(formatTaskLibraryBadge("status", "required")).toBe("Required");
-    expect(formatTaskLibraryBadge("status", "ignored")).toBe("Ignored");
-    expect(formatTaskLibraryBadge("capacity", "focused")).toBe("Focused");
-    expect(formatTaskLibraryBadge("capacity", "parallel")).toBe("Parallel");
-    expect(formatTaskLibraryBadge("reward", true)).toBe("Reward");
-    expect(formatTaskLibraryBadge("reward", false)).toBe("No reward");
-    expect(formatTaskLibraryBadge("formal", true)).toBe("Formal");
-    expect(formatTaskLibraryBadge("formal", false)).toBe("Support");
+    expect(formatTaskLibraryBadge("status", "required")).toBe("必做");
+    expect(formatTaskLibraryBadge("status", "ignored")).toBe("不影响状态");
+    expect(formatTaskLibraryBadge("capacity", "focused")).toBe("专注学习");
+    expect(formatTaskLibraryBadge("capacity", "parallel")).toBe("可并行");
+    expect(formatTaskLibraryBadge("reward", true)).toBe("可计分");
+    expect(formatTaskLibraryBadge("reward", false)).toBe("不计分");
+    expect(formatTaskLibraryBadge("formal", true)).toBe("正式学习");
+    expect(formatTaskLibraryBadge("formal", false)).toBe("辅助任务");
     expect(formatTaskLibraryBadge("credit", "dictation")).toBe(
-      "Dictation credit",
+      "听写可抵扣",
     );
   });
 });

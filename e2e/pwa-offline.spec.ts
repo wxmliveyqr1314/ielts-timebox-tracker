@@ -6,8 +6,9 @@ test("publishes the approved install manifest and icons", async ({ request }) =>
   expect(response.ok()).toBe(true);
   const manifest = await response.json();
   expect(manifest).toMatchObject({
-    name: "TimeBox Tracker",
-    short_name: "TimeBox",
+    name: "TimeBox 雅思学习助手",
+    short_name: "雅思学习",
+    lang: "zh-CN",
     display: "standalone",
     start_url: "/",
     scope: "/",
@@ -43,41 +44,41 @@ test("provides offline application shell and retains local data", async ({ page,
     await context.setOffline(true);
     await page.reload();
 
-    await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "当前离线" })).toBeVisible();
     await expect(page.locator('[data-wallpaper-active="true"]')).toBeVisible();
 
-    await page.getByRole("button", { name: "Study", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Study Plan" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Momo vocabulary" })).toBeVisible();
+    await page.getByRole("button", { name: "学习指南", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "学习指南" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Momo 词汇复习" })).toBeVisible();
 
-    await page.getByRole("button", { name: "History" }).click();
-    await expect(page.getByRole("button", { name: /expand jun 27, 2026/i })).toBeVisible();
+    await page.getByRole("button", { name: "历史" }).click();
+    await expect(page.getByRole("button", { name: /展开2026年6月27日/i })).toBeVisible();
 
-    await page.getByRole("button", { name: "Stats" }).click();
-    await expect(page.getByText("No stats yet")).toHaveCount(0);
-    await expect(page.getByText("Current streak")).toBeVisible();
+    await page.getByRole("button", { name: "统计" }).click();
+    await expect(page.getByText("暂无统计数据")).toHaveCount(0);
+    await expect(page.getByText("当前连续学习")).toBeVisible();
 
-    await page.getByRole("button", { name: "Settings" }).click();
-    await expect(page.getByText("Cloud account and sync actions are unavailable offline.")).toBeVisible();
-    await expect(page.getByText("Wallpaper cloud controls are unavailable offline.")).toBeVisible();
+    await page.getByRole("button", { name: "设置" }).click();
+    await expect(page.getByText("离线时无法使用账户和云同步，本地数据仍可使用。")).toBeVisible();
+    await expect(page.getByText("离线时无法修改云壁纸，已缓存的壁纸仍可显示。")).toBeVisible();
 
-    const sendMagicLinkBtn = page.getByRole("button", { name: "Send Magic Link" });
+    const sendMagicLinkBtn = page.getByRole("button", { name: "发送登录邮件" });
     if (await sendMagicLinkBtn.count() > 0) {
       await expect(sendMagicLinkBtn).toBeDisabled();
     }
 
-    const verifyCodeBtn = page.getByRole("button", { name: "Verify Code" });
+    const verifyCodeBtn = page.getByRole("button", { name: "验证登录" });
     if (await verifyCodeBtn.count() > 0) {
       await expect(verifyCodeBtn).toBeDisabled();
     }
 
-    const syncNowBtn = page.getByRole("button", { name: "Sync now" });
+    const syncNowBtn = page.getByRole("button", { name: "立即同步" });
     if (await syncNowBtn.count() > 0) {
       await expect(syncNowBtn).toBeDisabled();
     }
 
-    await expect(page.getByLabel("Choose wallpaper image")).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Upload & Apply" })).toBeDisabled();
+    await expect(page.getByLabel("选择壁纸图片")).toBeDisabled();
+    await expect(page.getByRole("button", { name: "上传并应用" })).toBeDisabled();
 
     // Check for no horizontal overflow
     const overflow = await page.evaluate(() => {

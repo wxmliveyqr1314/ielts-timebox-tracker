@@ -57,30 +57,41 @@ function renderDaily(record?: DailyRecord) {
 }
 
 describe("DailyPage dynamic planning", () => {
+  it("shows completed-earlier speaking in Chinese without rewriting the record", () => {
+    const record = makeDynamicRecord({ workdayBonus: { ...baseInput.workdayBonus, speakingMinutes: 12 } });
+    const before = JSON.stringify(record);
+    const appData = renderDaily(record);
+    const completed = screen.getByRole("region", { name: "提前完成的学习" });
+    expect(within(completed).getByText("口语")).toBeTruthy();
+    expect(within(completed).getByText("12分钟")).toBeTruthy();
+    expect(JSON.stringify(record)).toBe(before);
+    expect(appData.updateRecord).not.toHaveBeenCalled();
+  });
+
   it("collects day context and optional focused minutes", () => {
     renderDaily();
 
-    expect(screen.getByRole("button", { name: "Workday" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Rest day" })).toBeTruthy();
-    expect(screen.getByLabelText(/focused minutes available tonight/i)).toBeTruthy();
-    expect(screen.getByText(/default: 270 minutes/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "工作日" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "休息日" })).toBeTruthy();
+    expect(screen.getByLabelText(/今晚可用的专注学习时间/i)).toBeTruthy();
+    expect(screen.getByText(/默认值：270分钟/i)).toBeTruthy();
   });
 
   it("labels completed time for workday and rest day", () => {
     renderDaily();
-    expect(screen.getByText("Completed during workday")).toBeTruthy();
+    expect(screen.getByText("工作期间已完成")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Rest day" }));
-    expect(screen.getByText("Completed earlier today")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "休息日" }));
+    expect(screen.getByText("今天已提前完成")).toBeTruthy();
   });
 
   it("persists the selected inputs and generated snapshot together", () => {
     const appData = renderDaily();
-    fireEvent.click(screen.getByRole("button", { name: "Rest day" }));
-    fireEvent.change(screen.getByLabelText(/focused minutes available tonight/i), {
+    fireEvent.click(screen.getByRole("button", { name: "休息日" }));
+    fireEvent.change(screen.getByLabelText(/今晚可用的专注学习时间/i), {
       target: { value: "90" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Generate Plan" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成计划" }));
 
     const updater = appData.updateRecord.mock.calls[0][1];
     const created = updater(undefined) as DailyRecord;
@@ -92,10 +103,10 @@ describe("DailyPage dynamic planning", () => {
 
   it("persists speaking bonus minutes into the generated plan", () => {
     const appData = renderDaily();
-    fireEvent.change(screen.getByLabelText(/speaking bonus minutes/i), {
+    fireEvent.change(screen.getByLabelText(/已完成的口语时长/i), {
       target: { value: "12" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Generate Plan" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成计划" }));
 
     const updater = appData.updateRecord.mock.calls[0][1];
     const created = updater(undefined) as DailyRecord;
@@ -106,21 +117,21 @@ describe("DailyPage dynamic planning", () => {
   it("shows capacity, mode target, credit, unused capacity, and tonight totals", () => {
     renderDaily(makeDynamicRecord());
 
-    const summary = screen.getByRole("region", { name: "Plan summary" });
-    expect(within(summary).getByText("Focused capacity")).toBeTruthy();
-    expect(within(summary).getByText("Mode target")).toBeTruthy();
-    expect(within(summary).getByText("Completed earlier")).toBeTruthy();
-    expect(within(summary).getByText("Unused focused capacity")).toBeTruthy();
-    expect(within(summary).getByText("Tonight focused")).toBeTruthy();
-    expect(within(summary).getByText("125m")).toBeTruthy();
+    const summary = screen.getByRole("region", { name: "计划概览" });
+    expect(within(summary).getByText("可用专注时间")).toBeTruthy();
+    expect(within(summary).getByText("当前模式目标")).toBeTruthy();
+    expect(within(summary).getByText("提前完成的学习")).toBeTruthy();
+    expect(within(summary).getByText("剩余可用时间")).toBeTruthy();
+    expect(within(summary).getByText("今晚必做")).toBeTruthy();
+    expect(within(summary).getByText("125分钟")).toBeTruthy();
   });
 
   it("renders passive listening separately from focused time", () => {
     renderDaily(makeDynamicRecord());
 
-    expect(screen.getByText("Parallel listening")).toBeTruthy();
-    expect(screen.getByText(/60m reference/i)).toBeTruthy();
-    expect(screen.getByText(/reference already met/i)).toBeTruthy();
+    expect(screen.getByText("泛听参考")).toBeTruthy();
+    expect(screen.getByText(/参考时长 60分钟/i)).toBeTruthy();
+    expect(screen.getByText(/已达到参考时长/i)).toBeTruthy();
   });
 
   it("keeps legacy tasks visible without v2.1 metadata", () => {
@@ -141,14 +152,14 @@ describe("DailyPage dynamic planning", () => {
 
     renderDaily(record);
     expect(screen.getByText("Legacy dictation task")).toBeTruthy();
-    expect(screen.queryByText(/Done:/i)).toBeNull();
+    expect(screen.queryByText(/完成标准：/i)).toBeNull();
   });
 
   it("shows concise guidance for registered task definitions", () => {
     const record = makeDynamicRecord({
       tasks: [{
         id: "momo-task",
-        title: "Momo vocabulary",
+        title: "Momo 词汇复习",
         category: "momo",
         plannedMinutes: 20,
         actualMinutes: 0,
@@ -162,12 +173,12 @@ describe("DailyPage dynamic planning", () => {
     renderDaily(record);
     expect(
       screen.getByText(
-        "Complete today's Momo vocabulary review. Focus on accuracy, not speed.",
+        "完成今天的 Momo 词汇复习，优先保证准确率。",
       ),
     ).toBeTruthy();
     expect(
       screen.getByText(
-        "Done: Complete the planned minutes or today's assigned Momo review unit.",
+        "完成标准：完成计划时长，或完成今天安排的 Momo 复习单元。",
       ),
     ).toBeTruthy();
   });
@@ -178,7 +189,7 @@ describe("DailyPage dynamic planning", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: /mark complete: no compensatory staying up/i,
+        name: /标记为完成：不补偿性熬夜/i,
       }),
     );
 
@@ -190,11 +201,11 @@ describe("DailyPage dynamic planning", () => {
   it("renders only nonzero completed-earlier entries", () => {
     renderDaily(makeDynamicRecord());
 
-    const completed = screen.getByRole("region", { name: "Completed earlier" });
-    expect(within(completed).getByText("Momo vocabulary")).toBeTruthy();
-    expect(within(completed).getByText("Dictation")).toBeTruthy();
-    expect(within(completed).getByText("IELTS reading")).toBeTruthy();
-    expect(within(completed).getByText("Passive listening")).toBeTruthy();
+    const completed = screen.getByRole("region", { name: "提前完成的学习" });
+    expect(within(completed).getByText("Momo 词汇复习")).toBeTruthy();
+    expect(within(completed).getByText("听写")).toBeTruthy();
+    expect(within(completed).getByText("雅思阅读")).toBeTruthy();
+    expect(within(completed).getByText("泛听")).toBeTruthy();
   });
 
   it("shows a regeneration preview before applying changes", () => {
@@ -205,12 +216,12 @@ describe("DailyPage dynamic planning", () => {
     });
     const appData = renderDaily(record);
 
-    fireEvent.click(screen.getByRole("button", { name: /edit plan inputs/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Low" }));
-    fireEvent.click(screen.getByRole("button", { name: /preview regenerated plan/i }));
+    fireEvent.click(screen.getByRole("button", { name: /调整计划设置/i }));
+    fireEvent.click(screen.getByRole("button", { name: "偏低" }));
+    fireEvent.click(screen.getByRole("button", { name: /预览新计划/i }));
 
-    expect(screen.getByRole("dialog", { name: /review plan changes/i })).toBeTruthy();
-    expect(screen.getByText(/actual minutes, completion, and notes will be preserved/i)).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: /确认计划变更/i })).toBeTruthy();
+    expect(screen.getByText(/已记录的时长、完成情况和备注都会保留/i)).toBeTruthy();
     expect(appData.updateRecord).not.toHaveBeenCalled();
   });
 
@@ -225,10 +236,10 @@ describe("DailyPage dynamic planning", () => {
     const record = { ...original, tasks: [first, ...original.tasks.slice(1)] };
     const appData = renderDaily(record);
 
-    fireEvent.click(screen.getByRole("button", { name: /edit plan inputs/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Low" }));
-    fireEvent.click(screen.getByRole("button", { name: /preview regenerated plan/i }));
-    fireEvent.click(screen.getByRole("button", { name: /apply regenerated plan/i }));
+    fireEvent.click(screen.getByRole("button", { name: /调整计划设置/i }));
+    fireEvent.click(screen.getByRole("button", { name: "偏低" }));
+    fireEvent.click(screen.getByRole("button", { name: /预览新计划/i }));
+    fireEvent.click(screen.getByRole("button", { name: /应用新计划/i }));
 
     expect(appData.updateRecord).toHaveBeenCalledTimes(1);
     const updater = appData.updateRecord.mock.calls[0][1];
@@ -247,21 +258,21 @@ describe("DailyPage dynamic planning", () => {
     const record = makeDynamicRecord();
     const appData = renderDaily(record);
 
-    expect(screen.getByText("Optional stretch")).toBeTruthy();
-    expect(screen.getByText("Unused focused capacity")).toBeTruthy();
+    expect(screen.getByText("可选加练")).toBeTruthy();
+    expect(screen.getByText("剩余可用时间")).toBeTruthy();
     fireEvent.click(
-      screen.getByRole("switch", { name: /add optional stretch/i }),
+      screen.getByRole("switch", { name: /添加可选加练/i }),
     );
-    fireEvent.click(screen.getByRole("button", { name: /same focus/i }));
+    fireEvent.click(screen.getByRole("button", { name: /同方向加练/i }));
     fireEvent.click(
-      screen.getByRole("button", { name: /preview stretch changes/i }),
+      screen.getByRole("button", { name: /预览加练变更/i }),
     );
 
     expect(
-      screen.getByRole("dialog", { name: /review plan changes/i }),
+      screen.getByRole("dialog", { name: /确认计划变更/i }),
     ).toBeTruthy();
     fireEvent.click(
-      screen.getByRole("button", { name: /apply regenerated plan/i }),
+      screen.getByRole("button", { name: /应用新计划/i }),
     );
 
     const updater = appData.updateRecord.mock.calls[0][1];
@@ -279,8 +290,8 @@ describe("DailyPage dynamic planning", () => {
     cleanup();
     renderDaily(updated);
     expect(
-      screen.getByRole("region", { name: /optional stretch tasks/i }),
+      screen.getByRole("region", { name: /可选加练任务/i }),
     ).toBeTruthy();
-    expect(screen.getByText(/0 penalty if skipped/i)).toBeTruthy();
+    expect(screen.getByText(/跳过不扣分/i)).toBeTruthy();
   });
 });

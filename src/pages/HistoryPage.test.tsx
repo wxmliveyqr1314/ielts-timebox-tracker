@@ -93,9 +93,9 @@ describe("HistoryPage", () => {
       old: makeRecord("2026-06-01", "yellow"),
       future: makeRecord("2026-06-28", "red"),
     });
-    const summary = screen.getByRole("region", { name: "Recent history summary" });
-    expect(summary.textContent).toContain("1Days1Green0Yellow0Red0Pending");
-    expect(screen.getByRole("button", { name: /expand jun 1, 2026/i })).toBeTruthy();
+    const summary = screen.getByRole("region", { name: "最近学习记录概览" });
+    expect(summary.textContent).toContain("1天数1达标0部分完成0需调整0待开始");
+    expect(screen.getByRole("button", { name: /展开2026年6月1日/i })).toBeTruthy();
   });
 
   it("reports speaking bonus and all formal task minutes once on speaking days", () => {
@@ -104,8 +104,8 @@ describe("HistoryPage", () => {
     record.workdayBonus.speakingMinutes = 15;
     record.tasks[0].category = "speaking_shadowing";
     renderHistory({ [record.date]: record });
-    expect(screen.getByText("Formal: 35m")).toBeTruthy();
-    expect(screen.getByText("Speak: 35m")).toBeTruthy();
+    expect(screen.getByText("正式学习：35分钟")).toBeTruthy();
+    expect(screen.getByText("口语：35分钟")).toBeTruthy();
   });
 
   it("renders all status counts including pending", () => {
@@ -115,68 +115,68 @@ describe("HistoryPage", () => {
       c: makeRecord("2026-06-25", "red"),
       d: makeRecord("2026-06-24", "pending"),
     });
-    expect(screen.getAllByText("Green").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Yellow").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Red").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("达标").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("部分完成").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("需调整").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("待开始").length).toBeGreaterThan(0);
   });
 
   it("renders a calm empty state", () => {
     renderHistory({});
-    expect(screen.getByText(/completed days will appear here/i)).toBeTruthy();
+    expect(screen.getByText(/完成学习后/i)).toBeTruthy();
   });
 
   it("uses a semantic expand button and preserves editing controls", () => {
     renderHistory({ a: makeRecord("2026-06-27", "green") });
-    fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
+    fireEvent.click(screen.getByRole("button", { name: /展开2026年6月27日/i }));
     expect(screen.getByDisplayValue("20")).toBeTruthy();
-    expect(screen.getByPlaceholderText(/task notes/i)).toBeTruthy();
+    expect(screen.getByPlaceholderText(/任务备注/i)).toBeTruthy();
   });
 
   it("shows a readable focus mode label", () => {
     renderHistory({ a: makeRecord("2026-06-27", "green") });
-    expect(screen.getByText("Dictation")).toBeTruthy();
+    expect(screen.getByText("听写")).toBeTruthy();
     expect(screen.queryByText("listening_focus")).toBeNull();
   });
 
   it("shows the persisted dynamic plan summary when expanded", () => {
     renderHistory({ a: makeDynamicRecord("2026-06-27") });
-    fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
+    fireEvent.click(screen.getByRole("button", { name: /展开2026年6月27日/i }));
 
-    const summary = screen.getByRole("region", { name: /historical plan summary/i });
+    const summary = screen.getByRole("region", { name: /历史计划概览/i });
     const planSummary = within(summary).getByRole("region", {
-      name: "Plan summary",
+      name: "计划概览",
     });
-    expect(within(summary).getByText("Workday")).toBeTruthy();
-    expect(within(planSummary).getByText("Focused capacity")).toBeTruthy();
-    expect(within(planSummary).getByText("Mode target")).toBeTruthy();
-    expect(within(planSummary).getByText("Tonight focused")).toBeTruthy();
-    expect(within(planSummary).getAllByText("90m")).toHaveLength(2);
-    expect(within(planSummary).getByText("Completed earlier")).toBeTruthy();
-    expect(within(planSummary).getByText("Unused focused capacity")).toBeTruthy();
-    expect(within(summary).getByText("135m")).toBeTruthy();
-    expect(within(planSummary).getByText("Parallel listening")).toBeTruthy();
-    expect(within(planSummary).getByText(/reference already met/i)).toBeTruthy();
+    expect(within(summary).getByText("工作日")).toBeTruthy();
+    expect(within(planSummary).getByText("可用专注时间")).toBeTruthy();
+    expect(within(planSummary).getByText("当前模式目标")).toBeTruthy();
+    expect(within(planSummary).getByText("今晚必做")).toBeTruthy();
+    expect(within(planSummary).getAllByText("90分钟")).toHaveLength(2);
+    expect(within(planSummary).getByText("提前完成的学习")).toBeTruthy();
+    expect(within(planSummary).getByText("剩余可用时间")).toBeTruthy();
+    expect(within(summary).getByText("135分钟")).toBeTruthy();
+    expect(within(planSummary).getByText("泛听参考")).toBeTruthy();
+    expect(within(planSummary).getByText(/已达到参考时长/i)).toBeTruthy();
   });
 
   it("keeps legacy details available without a plan summary", () => {
     renderHistory({ a: makeRecord("2026-06-27", "green") });
-    fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
+    fireEvent.click(screen.getByRole("button", { name: /展开2026年6月27日/i }));
 
-    expect(screen.getByText("Tasks")).toBeTruthy();
-    expect(screen.queryByRole("region", { name: /historical plan summary/i })).toBeNull();
+    expect(screen.getByText("学习任务")).toBeTruthy();
+    expect(screen.queryByRole("region", { name: /历史计划概览/i })).toBeNull();
   });
 
   it("warns when a historical plan input changes without replacing tasks", () => {
     const record = makeDynamicRecord("2026-06-27");
     const appData = renderHistory({ a: record });
-    fireEvent.click(screen.getByRole("button", { name: /expand jun 27, 2026/i }));
-    fireEvent.change(screen.getByLabelText(/historical day context/i), {
+    fireEvent.click(screen.getByRole("button", { name: /展开2026年6月27日/i }));
+    fireEvent.change(screen.getByLabelText(/当天安排/i), {
       target: { value: "rest_day" },
     });
 
-    expect(screen.getByText(/plan inputs changed/i)).toBeTruthy();
-    expect(screen.getByText(/existing tasks were not regenerated/i)).toBeTruthy();
+    expect(screen.getByText(/计划设置已变更/i)).toBeTruthy();
+    expect(screen.getByText(/当前任务尚未重新生成/)).toBeTruthy();
     const updater = appData.updateRecord.mock.calls[0][1];
     const updated = updater(record) as DailyRecord;
     expect(updated.dayContext).toBe("rest_day");
@@ -207,12 +207,12 @@ describe("HistoryPage", () => {
 
     renderHistory({ [date]: record });
     fireEvent.click(
-      screen.getByRole("button", { name: /expand jun 27, 2026/i }),
+      screen.getByRole("button", { name: /展开2026年6月27日/i }),
     );
 
-    expect(screen.getByText("Optional stretch")).toBeTruthy();
-    expect(screen.getByText(/does not change day status/i)).toBeTruthy();
-    expect(screen.getByText("Balanced")).toBeTruthy();
-    expect(screen.getAllByText(/green/i).length).toBeGreaterThan(0);
+    expect(screen.getByText("可选加练")).toBeTruthy();
+    expect(screen.getByText(/加练不影响当天状态/i)).toBeTruthy();
+    expect(screen.getByText("均衡加练")).toBeTruthy();
+    expect(screen.getAllByText(/达标/i).length).toBeGreaterThan(0);
   });
 });
