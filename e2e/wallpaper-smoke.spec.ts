@@ -12,8 +12,8 @@ test("restores the local wallpaper without mobile horizontal overflow", async ({
   await expect(content).toBeVisible();
   await expect(page.locator(".fixed-wallpaper-layer")).toBeVisible();
 
-  await page.getByRole("button", { name: "History" }).click();
-  await expect(page.getByRole("heading", { name: "History" })).toBeVisible();
+  await page.getByRole("button", { name: "历史" }).click();
+  await expect(page.getByRole("heading", { name: "历史" })).toBeVisible();
 
   const overflow = await page.evaluate(() => ({
     body: document.body.scrollWidth - document.body.clientWidth,

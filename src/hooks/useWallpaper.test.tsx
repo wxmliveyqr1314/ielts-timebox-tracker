@@ -54,7 +54,7 @@ describe("useWallpaper", () => {
     });
     const { result } = renderHook(() => useWallpaper({ userId: "user-1", authReady: true, deps }));
     await waitFor(() => expect(result.current.ready).toBe(true));
-    await waitFor(() => expect(result.current.notice?.message).toContain("offline"));
+    await waitFor(() => expect(result.current.notice?.message).toContain("无法从云端获取壁纸"));
     expect(result.current.active).toBe(true);
     expect(result.current.imageUrl).toBe("blob:fake-url");
   });
@@ -141,7 +141,7 @@ describe("useWallpaper", () => {
     await waitFor(() => expect(result.current.ready).toBe(true));
     expect(result.current.active).toBe(false);
     expect(result.current.imageUrl).toBeNull();
-    expect(result.current.notice?.message).toContain("IDB Error");
+    expect(result.current.notice?.message).toContain("无法读取本地壁纸缓存");
   });
 
   it("cloud wallpaperPath empty and clearCache throws error leaves old wallpaper hidden", async () => {
@@ -154,7 +154,7 @@ describe("useWallpaper", () => {
     const { result } = renderHook(() => useWallpaper({ userId: "user-1", authReady: true, deps }));
     await waitFor(() => expect(result.current.ready).toBe(true));
     // Wait for the cloud fetch to finish and update notice
-    await waitFor(() => expect(result.current.notice?.message).toContain("Clear error"));
+    await waitFor(() => expect(result.current.notice?.message).toContain("无法清除本地壁纸缓存"));
     expect(result.current.active).toBe(false);
     expect(result.current.imageUrl).toBeNull();
   });

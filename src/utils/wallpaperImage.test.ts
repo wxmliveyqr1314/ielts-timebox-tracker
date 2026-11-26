@@ -8,7 +8,7 @@ describe("wallpaper image rules", () => {
   });
 
   it("rejects unsupported and oversized source files", () => {
-    expect(validateWallpaperFile({ type: "image/gif", size: 1000 })).toContain("JPEG, PNG, or WebP");
+    expect(validateWallpaperFile({ type: "image/gif", size: 1000 })).toContain("JPEG、PNG 或 WebP");
     expect(validateWallpaperFile({ type: "image/jpeg", size: 16 * 1024 * 1024 })).toContain("15 MB");
     expect(validateWallpaperFile({ type: "image/png", size: 1000 })).toBeNull();
   });
@@ -17,7 +17,7 @@ describe("wallpaper image rules", () => {
 describe("wallpaper image processing", () => {
   it("rejects invalid file directly", async () => {
     const file = new File([""], "test.gif", { type: "image/gif" });
-    await expect(processWallpaperImage(file)).rejects.toThrow("Choose a JPEG, PNG, or WebP image.");
+    await expect(processWallpaperImage(file)).rejects.toThrow("请选择 JPEG、PNG 或 WebP 图片。");
   });
 
   it("processes and resizes image successfully", async () => {

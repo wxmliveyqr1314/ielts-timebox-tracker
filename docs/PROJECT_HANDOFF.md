@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.5.2
+- Version: v2.6.0
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -142,6 +142,14 @@ Study Plan is not yet a long-term IELTS Roadmap. Future work can add IELTS exam-
 - Current streak starts from the user's local today, falling back to yesterday only when today has no record. Missing dates and Red stop the streak; Pending remains transparent. Future records are ignored, and lifetime best streak remains available after an absence.
 - Tests exercise affected edits through local persistence, cloud upload/merge, and a second-device download, plus browser reload/navigation. See `docs/V2_5_2_MAINTENANCE_PLAN.md`.
 - Existing edits skipped before this patch cannot be identified reliably. Re-edit an affected field after upgrading, then use Sync now to synchronize it.
+
+## v2.6 Simplified Chinese Interface (2026-11-26)
+
+- Simplified Chinese is the default for navigation, Daily setup, task guidance, History, Stats, rewards, account/sync, wallpaper, backup, data-health feedback, status/energy labels, dates, duration units, and accessibility text. The app document and PWA manifest declare `zh-CN`.
+- `src/i18n/taskCopy.ts` translates all 20 task definitions at the presentation boundary. Registry source titles, IDs, task matching, enums, and stored records stay stable. Known English task titles from legacy records display in Chinese; custom titles and user-written English notes remain intact.
+- `src/i18n/feedback.ts` translates data-health codes and wallpaper errors without changing validation rules. Authentication recovery guidance is Chinese, with an untranslated-error fallback replaced by a user-facing Chinese message.
+- Earlier-completed learning also displays Speaking Bonus. The native file chooser is presented with a Chinese button, and Stats duration typography fits Chinese units on mobile.
+- Existing data requires no migration. Reward-goal cloud sync remains a separate future feature. See `docs/V2_6_CHINESE_INTERFACE_PLAN.md` for scope and verification.
 
 ## Quality Commands
 

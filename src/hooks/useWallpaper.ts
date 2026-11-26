@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ProcessedWallpaper, WallpaperLocalMeta, WallpaperPreference } from "../types/wallpaper";
+import { formatWallpaperError } from "../i18n/feedback";
 
 export interface WallpaperViewState {
   ready: boolean;
@@ -139,7 +140,7 @@ export function useWallpaper({ userId, authReady, deps }: { userId: string | nul
             try {
               await deps.clearCache();
             } catch (e: any) {
-              if (!isStale()) setNotice({ type: "warning", message: e.message || "Failed to clear cache." });
+              if (!isStale()) setNotice({ type: "warning", message: formatWallpaperError(e, "无法清除本地壁纸缓存。") });
             }
           }
           return;
@@ -161,7 +162,7 @@ export function useWallpaper({ userId, authReady, deps }: { userId: string | nul
         }
       } catch (err: any) {
         if (!isStale()) {
-          setNotice({ type: "warning", message: err.message || "Failed to sync wallpaper from cloud." });
+          setNotice({ type: "warning", message: formatWallpaperError(err, "无法从云端获取壁纸，请检查网络后重试。") });
         }
       }
 
@@ -171,7 +172,7 @@ export function useWallpaper({ userId, authReady, deps }: { userId: string | nul
           updateImageUrl(null);
           setPreference(null);
           setReady(true);
-          setNotice({ type: "warning", message: err.message || "Failed to load local wallpaper cache." });
+          setNotice({ type: "warning", message: formatWallpaperError(err, "无法读取本地壁纸缓存。") });
         }
       }
     };
@@ -201,12 +202,12 @@ export function useWallpaper({ userId, authReady, deps }: { userId: string | nul
       if (cleanupWarning) {
         setNotice({ type: "warning", message: cleanupWarning });
       } else {
-        setNotice({ type: "success", message: "Wallpaper updated successfully." });
+        setNotice({ type: "success", message: "壁纸已更新。" });
       }
       return true;
     } catch (err: any) {
       if (!isStale()) {
-        setNotice({ type: "error", message: err.message || "Failed to upload wallpaper." });
+        setNotice({ type: "error", message: formatWallpaperError(err, "上传壁纸失败，请稍后重试。") });
       }
       return false;
     } finally {
@@ -233,7 +234,7 @@ export function useWallpaper({ userId, authReady, deps }: { userId: string | nul
     } catch (err: any) {
       if (!isStale()) {
         setActive(!enabled);
-        setNotice({ type: "error", message: err.message || "Failed to save preference." });
+        setNotice({ type: "error", message: formatWallpaperError(err, "保存壁纸设置失败，请稍后重试。") });
       }
     } finally {
       if (!isStale()) setBusy(null);
@@ -258,7 +259,7 @@ export function useWallpaper({ userId, authReady, deps }: { userId: string | nul
       }
     } catch (err: any) {
       if (!isStale()) {
-        setNotice({ type: "error", message: err.message || "Failed to save preference." });
+        setNotice({ type: "error", message: formatWallpaperError(err, "保存壁纸设置失败，请稍后重试。") });
       }
     } finally {
       if (!isStale()) setBusy(null);
@@ -279,11 +280,11 @@ export function useWallpaper({ userId, authReady, deps }: { userId: string | nul
       if (cleanupWarning) {
         setNotice({ type: "warning", message: cleanupWarning });
       } else {
-        setNotice({ type: "success", message: "Wallpaper removed." });
+        setNotice({ type: "success", message: "壁纸已移除。" });
       }
     } catch (err: any) {
       if (!isStale()) {
-        setNotice({ type: "error", message: err.message || "Failed to remove wallpaper." });
+        setNotice({ type: "error", message: formatWallpaperError(err, "移除壁纸失败，请稍后重试。") });
       }
     } finally {
       if (!isStale()) setBusy(null);

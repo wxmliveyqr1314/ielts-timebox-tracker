@@ -8,7 +8,8 @@ import {
 import { calculateColorStatus } from "../utils/status";
 import { getModuleMinutes, getRecentRecords } from "../utils/stats";
 import { syncSleepControlTasks, syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
-import { formatFocusMode } from "../utils/display";
+import { formatDayStatus, formatEnergyLevel, formatFocusMode, formatWeekday } from "../utils/display";
+import { formatTaskTitle } from "../i18n/taskCopy";
 import { PlanSummary } from "../components/daily/PlanSummary";
 
 // Helper to extract minutes
@@ -57,7 +58,7 @@ export function HistoryPage({ appData }: { appData: any }) {
 
   const handleDelete = (date: string) => {
     appData.deleteRecord(date);
-    setDeleteMessage("Record deleted locally. Tap Sync now in Settings to update cloud backup.");
+    setDeleteMessage("本地记录已删除。请到设置点击“立即同步”，更新云端备份。");
   };
 
   const last7Days = getRecentRecords(records, 7);
@@ -86,17 +87,17 @@ export function HistoryPage({ appData }: { appData: any }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div role="region" aria-label="Recent history summary" className="wallpaper-surface rounded-lg border border-slate-200 p-4 shadow-sm">
+      <div role="region" aria-label="最近学习记录概览" className="wallpaper-surface rounded-lg border border-slate-200 p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-bold text-slate-800">History</h2>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Last 7 days</span>
+          <h2 className="text-lg font-bold text-slate-800">历史</h2>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">最近 7 天</span>
         </div>
         <div className="flex bg-slate-50/50 rounded-lg border border-slate-200/70 overflow-hidden divide-x divide-slate-200/70">
-          <SummarySegment label="Days" value={last7Days.length} tone="slate" />
-          <SummarySegment label="Green" value={greenDays} tone="green" />
-          <SummarySegment label="Yellow" value={yellowDays} tone="yellow" />
-          <SummarySegment label="Red" value={redDays} tone="red" />
-          <SummarySegment label="Pending" value={pendingDays} tone="slate" />
+          <SummarySegment label="天数" value={last7Days.length} tone="slate" />
+          <SummarySegment label="达标" value={greenDays} tone="green" />
+          <SummarySegment label="部分完成" value={yellowDays} tone="yellow" />
+          <SummarySegment label="需调整" value={redDays} tone="red" />
+          <SummarySegment label="待开始" value={pendingDays} tone="slate" />
         </div>
       </div>
 
@@ -104,14 +105,14 @@ export function HistoryPage({ appData }: { appData: any }) {
         {deleteMessage && (
           <div className="p-3 bg-slate-800 text-white text-sm rounded-lg flex items-center justify-between shadow-lg">
             <span>{deleteMessage}</span>
-            <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white p-1" aria-label="Dismiss message"><X className="w-4 h-4" /></button>
+            <button onClick={() => setDeleteMessage(null)} className="text-slate-400 hover:text-white p-1" aria-label="关闭提示"><X className="w-4 h-4" /></button>
           </div>
         )}
         {records.length === 0 && (
           <div className="py-14 text-center wallpaper-surface rounded-lg border border-slate-200">
             <Calendar className="w-5 h-5 mx-auto text-slate-400 mb-3" />
-            <p className="text-sm font-semibold text-slate-600">No history yet</p>
-            <p className="text-xs text-slate-500 mt-1">Completed days will appear here.</p>
+            <p className="text-sm font-semibold text-slate-600">暂无历史记录</p>
+            <p className="text-xs text-slate-500 mt-1">完成学习后，可以在这里查看记录。</p>
           </div>
         )}
         {records.map((record) => {
@@ -126,30 +127,30 @@ export function HistoryPage({ appData }: { appData: any }) {
                 className="w-full p-4 pl-5 text-left hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 flex items-center justify-between"
                 onClick={() => toggleExpand(record.date)}
                 aria-expanded={isExpanded}
-                aria-label={`${isExpanded ? "Collapse" : "Expand"} ${formatDateStr(record.date)}`}
+                aria-label={`${isExpanded ? "收起" : "展开"}${formatDateStr(record.date)}`}
               >
                 <div className="flex flex-col flex-1 pr-4 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-bold text-slate-800">{formatDateStr(record.date)}</span>
-                    <span className="text-xs font-semibold text-slate-400">{record.weekday}</span>
-                    {record.exercised && <span className="text-[10px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Workout</span>}
+                    <span className="text-xs font-semibold text-slate-400">{formatWeekday(record.weekday)}</span>
+                    {record.exercised && <span className="text-[10px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">已运动</span>}
                   </div>
                   <div className="text-[10px] font-bold tracking-wider text-slate-400 uppercase flex flex-wrap gap-x-3 gap-y-1">
                     <span>{formatFocusMode(record.dayType)}</span>
-                    <span>{record.energyLevel} Energy</span>
-                    <span className="text-indigo-500">Formal: {metrics.formalMinutes}m</span>
-                    <span>Passive: {metrics.passiveMinutes}m</span>
-                    <span>Speak: {metrics.speakingMinutes}m</span>
+                    <span>{formatEnergyLevel(record.energyLevel)}</span>
+                    <span className="text-indigo-500">正式学习：{metrics.formalMinutes}分钟</span>
+                    <span>泛听：{metrics.passiveMinutes}分钟</span>
+                    <span>口语：{metrics.speakingMinutes}分钟</span>
                   </div>
                   {record.tomorrowFirstStep && (
                      <div className="mt-2 text-xs text-slate-500 truncate">
-                        <span className="font-semibold text-slate-400">Next:</span> {record.tomorrowFirstStep}
+                        <span className="font-semibold text-slate-400">明日第一步：</span> {record.tomorrowFirstStep}
                      </div>
                   )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className={cn("px-2.5 py-1 rounded-lg border flex items-center justify-center font-bold text-[10px] uppercase", statusColors[record.status || "pending"])}>
-                    {record.status || "pending"}
+                    {formatDayStatus(record.status || "pending")}
                   </div>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
                 </div>
@@ -185,27 +186,27 @@ function HistoricalPlanSummary({ record }: { record: DailyRecord }) {
 
   return (
     <section
-      aria-label="Historical plan summary"
+      aria-label="历史计划概览"
       className="space-y-3 rounded-xl border border-slate-200 bg-white/50 p-4 wallpaper-surface"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Generated plan
+            已生成的计划
           </h3>
           <p className="mt-1 text-[10px] text-slate-400">
-            Saved by planning engine v{snapshot.engineVersion}
+            当日保存的学习安排
           </p>
         </div>
         <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase text-indigo-600">
-          {snapshot.input.dayContext === "rest_day" ? "Rest day" : "Workday"}
+          {snapshot.input.dayContext === "rest_day" ? "休息日" : "工作日"}
         </span>
       </div>
 
       <div className="flex items-center justify-between rounded-lg bg-emerald-50/80 px-3 py-2">
-        <span className="text-xs font-semibold text-emerald-700">Completed earlier</span>
+        <span className="text-xs font-semibold text-emerald-700">提前完成的学习</span>
         <span className="font-mono text-xs font-bold text-emerald-900">
-          {completedEarlierMinutes}m
+          {completedEarlierMinutes}分钟
         </span>
       </div>
 
@@ -213,23 +214,22 @@ function HistoricalPlanSummary({ record }: { record: DailyRecord }) {
 
       {snapshot.stretch?.enabled && (
         <div
-          aria-label="Historical optional stretch"
+          aria-label="历史加练情况"
           className="border-t border-indigo-100 pt-3"
         >
           <div className="flex items-center justify-between gap-3">
             <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">
-              Optional stretch
+              可选加练
             </span>
             <span className="text-xs font-bold text-slate-700">
               {snapshot.stretch.strategy === "balanced"
-                ? "Balanced"
-                : "Same Focus"}
+                ? "均衡加练"
+                : "同方向加练"}
             </span>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-500">
-            {snapshot.stretch.plannedMinutes}m planned from{" "}
-            {snapshot.stretch.budgetMinutes}m unused capacity;{" "}
-            {completedStretchMinutes}m completed. It does not change day status.
+            从 {snapshot.stretch.budgetMinutes}分钟余量中安排了 {snapshot.stretch.plannedMinutes}分钟加练；
+            已完成 {completedStretchMinutes}分钟。加练不影响当天状态。
           </p>
         </div>
       )}
@@ -304,7 +304,7 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
         <section className="space-y-3">
           <div>
             <label htmlFor={`history-day-context-${record.date}`} className="mb-1 block text-xs font-semibold text-slate-600">
-              Historical day context
+              当天安排
             </label>
             <select
               id={`history-day-context-${record.date}`}
@@ -312,22 +312,22 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
               onChange={(event) => handlePlanInputUpdate("dayContext", event.target.value as DayContext)}
               className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm focus:border-indigo-500 focus:outline-none"
             >
-              <option value="workday">Workday</option>
-              <option value="rest_day">Rest day</option>
+              <option value="workday">工作日</option>
+              <option value="rest_day">休息日</option>
             </select>
           </div>
 
           {planInputsChanged && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              <p className="font-bold">Plan inputs changed</p>
-              <p className="mt-1">Existing tasks were not regenerated. Use Daily to preview and apply a new plan.</p>
+              <p className="font-bold">计划设置已变更</p>
+              <p className="mt-1">当前任务尚未重新生成。请到“今日”预览并应用新计划。</p>
             </div>
           )}
         </section>
       )}
 
       <div className="space-y-0">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-2">Tasks</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-2">学习任务</h3>
         {record.tasks.map(task => (
           <div key={task.id} className="py-3 border-b border-slate-200/70 last:border-b-0 space-y-2">
             <div className="flex items-center justify-between gap-3">
@@ -335,16 +335,16 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
                 <button 
                   onClick={() => handleTaskUpdate(task.id, "completed", !task.completed)}
                   className={cn("w-5 h-5 shrink-0 rounded flex items-center justify-center border transition-colors", task.completed ? "bg-emerald-500 border-emerald-600 text-white" : "bg-white border-slate-300")}
-                  aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+                  aria-label={task.completed ? "标记为未完成" : "标记为完成"}
                 >
                   {task.completed && <CheckCircle2 className="w-3.5 h-3.5" />}
                 </button>
                 <span className={cn("text-sm font-semibold break-words leading-snug", task.completed ? "text-slate-400 line-through" : "text-slate-700")}>
-                  {task.title}
+                  {formatTaskTitle(task)}
                 </span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">Plan {task.plannedMinutes}m</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">计划 {task.plannedMinutes}分钟</span>
                 <div className="w-14 shrink-0">
                   {task.category !== "sleep_control" ? (
                     <input
@@ -365,7 +365,7 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
             </div>
             <input 
               type="text"
-              placeholder="Task notes (optional)"
+              placeholder="任务备注（选填）"
               className="w-full text-xs p-2 bg-white/50 border border-slate-200/70 rounded-md focus:outline-none focus:bg-white focus:border-indigo-300"
               value={task.notes || ""}
               onChange={(e) => handleTaskUpdate(task.id, "notes", e.target.value)}
@@ -375,26 +375,26 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
       </div>
 
       <div className="space-y-4 border-t border-slate-200 pt-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Daily Details</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">当日详情</h3>
         
         <div>
-          <label className="text-xs font-semibold text-slate-600 block mb-1">Tomorrow's First Step</label>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">明日第一步</label>
           <input 
             type="text"
             className="w-full text-sm p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
             value={record.tomorrowFirstStep || ""}
             onChange={(e) => handleRecordUpdate("tomorrowFirstStep", e.target.value)}
-            placeholder="What's the very first action tomorrow?"
+            placeholder="明天准备先做哪一件具体的事？"
           />
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-600 block mb-1">General Notes</label>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">学习备注</label>
           <textarea 
             className="w-full text-sm p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 min-h-[80px]"
             value={record.notes || ""}
             onChange={(e) => handleRecordUpdate("notes", e.target.value)}
-            placeholder="Any reflections?"
+            placeholder="记录今天的体会或需要调整的地方"
           />
         </div>
 
@@ -406,7 +406,7 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
             >
               {record.stoppedAfter2230 && <CheckCircle2 className="w-3.5 h-3.5" />}
             </button>
-            <span className="text-xs font-semibold text-slate-600 leading-tight">Stopped after 22:30</span>
+            <span className="text-xs font-semibold text-slate-600 leading-tight">22:30 后不再开启高强度任务</span>
           </div>
 
           <div className="flex items-center gap-2 bg-white p-2.5 rounded-lg border border-slate-200">
@@ -416,12 +416,12 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
             >
               {record.noCompensatoryStayingUp && <CheckCircle2 className="w-3.5 h-3.5" />}
             </button>
-            <span className="text-xs font-semibold text-slate-600 leading-tight">No compensatory staying up</span>
+            <span className="text-xs font-semibold text-slate-600 leading-tight">不补偿性熬夜</span>
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-600 block mb-1">Bedtime (optional)</label>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">就寝时间（选填）</label>
           <input 
             type="time"
             className="text-sm p-2 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 w-32"
@@ -438,23 +438,23 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
             className="text-xs text-rose-400 hover:text-rose-600 flex items-center gap-1 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Delete Record
+            删除记录
           </button>
         ) : (
           <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 w-full">
             <h4 className="text-xs font-bold text-rose-700 mb-1 flex items-center gap-1">
               <Trash2 className="w-3.5 h-3.5" />
-              Delete Record?
+              确认删除记录？
             </h4>
             <p className="text-[10px] text-rose-600 mb-3">
-              This will delete your local record. If you use cloud sync, the deletion will be synced to the cloud on your next 'Sync now'. Consider exporting a JSON backup in Settings first.
+              这会删除本地记录；下次点击“立即同步”时，也会同步删除云端记录。建议先在设置中导出 JSON 备份。
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 py-2 bg-white text-slate-600 border border-slate-200 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors"
               >
-                Cancel
+                取消
               </button>
               <button
                 onClick={() => {
@@ -463,7 +463,7 @@ function RecordDetail({ record, updateRecord, deleteRecord }: { record: DailyRec
                 }}
                 className="flex-1 py-2 bg-rose-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-rose-700 transition-colors"
               >
-                Delete
+                删除
               </button>
             </div>
           </div>

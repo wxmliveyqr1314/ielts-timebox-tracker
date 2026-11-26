@@ -55,10 +55,10 @@ function makeStatsRecord(
     },
     tasks: [
       task("Momo", "momo", 20),
-      task("Dictation", "dictation_new", 30),
-      task("Reading", "reading_scan", 20),
-      task("Speaking", "speaking_shadowing", 10),
-      task("Passive listening", "passive_listening", 15),
+      task("听写", "dictation_new", 30),
+      task("阅读", "reading_scan", 20),
+      task("口语", "speaking_shadowing", 10),
+      task("泛听", "passive_listening", 15),
     ],
     createdAt: `${date}T00:00:00.000Z`,
     updatedAt: `${date}T12:00:00.000Z`,
@@ -78,13 +78,13 @@ describe("StatsPage", () => {
   it("shows no recent study after a long absence but retains lifetime reward points", () => {
     vi.setSystemTime(new Date(2026, 10, 26, 12));
     render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
-    expect(within(screen.getByRole("group", { name: "Study time" })).getByText("0m")).toBeTruthy();
-    expect(screen.queryByText("5h 20m")).toBeNull();
-    expect(screen.getByRole("region", { name: /reward points/i }).textContent).toContain("1.5");
-    expect(screen.queryByText("No stats yet")).toBeNull();
-    const streak = screen.getByRole("group", { name: "Current streak" });
+    expect(within(screen.getByRole("group", { name: "学习时长" })).getByText("0分钟")).toBeTruthy();
+    expect(screen.queryByText("5小时20分钟")).toBeNull();
+    expect(screen.getByRole("region", { name: /学习积分/i }).textContent).toContain("1.5");
+    expect(screen.queryByText("暂无统计数据")).toBeNull();
+    const streak = screen.getByRole("group", { name: "当前连续学习" });
     expect(within(streak).getByText("0")).toBeTruthy();
-    expect(streak.textContent).toContain("Best: 2 Days");
+    expect(streak.textContent).toContain("历史最佳：2天");
   });
 
   it("includes completed-earlier speaking in the time and speaking activity cards", () => {
@@ -92,25 +92,25 @@ describe("StatsPage", () => {
     record.tasks = [];
     record.workdayBonus.speakingMinutes = 25;
     render(<StatsPage appData={{ data: { records: { [record.date]: record } } }} />);
-    expect(within(screen.getByRole("group", { name: "Study time" })).getByText("25m")).toBeTruthy();
-    expect(screen.getByText("Avg 25m / day")).toBeTruthy();
+    expect(within(screen.getByRole("group", { name: "学习时长" })).getByText("25分钟")).toBeTruthy();
+    expect(screen.getByText("平均每天 25分钟")).toBeTruthy();
   });
 
   it("renders the approved heading and core sections", () => {
     const records: Record<string, DailyRecord> = makeStatsRecords();
     render(<StatsPage appData={{ data: { records } }} />);
-    expect(screen.getByRole("heading", { name: "Stats" })).toBeTruthy();
-    expect(screen.getByText("Last 7 days")).toBeTruthy();
-    expect(screen.getByText("Current streak")).toBeTruthy();
-    expect(screen.getByText("Status distribution")).toBeTruthy();
-    expect(screen.getByText("Time by module")).toBeTruthy();
-    expect(screen.getByText("Sleep control")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "统计" })).toBeTruthy();
+    expect(screen.getAllByText("最近 7 天").length).toBeGreaterThan(0);
+    expect(screen.getByText("当前连续学习")).toBeTruthy();
+    expect(screen.getByText("完成情况")).toBeTruthy();
+    expect(screen.getByText("各项学习时长")).toBeTruthy();
+    expect(screen.getByText("睡眠保护")).toBeTruthy();
   });
 
   it("renders status distribution segment bar with explicit counts", () => {
     render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
-    expect(screen.getByRole("region", { name: /status distribution/i })).toBeTruthy();
-    for (const label of ["Green", "Yellow", "Red", "Pending"]) {
+    expect(screen.getByRole("region", { name: /完成情况/i })).toBeTruthy();
+    for (const label of ["达标", "部分完成", "需调整", "待开始"]) {
       expect(screen.getByText(label)).toBeTruthy();
     }
   });
@@ -119,20 +119,20 @@ describe("StatsPage", () => {
     render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
     // In makeStatsRecords, 4 days * 80 min = 320 min total formal study time.
     // formatMinutes(320) yields "5h 20m"
-    expect(screen.getByText(/5h 20m/)).toBeTruthy();
+    expect(screen.getByText(/5小时20分钟/)).toBeTruthy();
   });
 
   it("renders a neutral empty state without invalid percentages", () => {
     const { container } = render(<StatsPage appData={{ data: { records: {} } }} />);
-    expect(screen.getByText(/complete a day to see your trends/i)).toBeTruthy();
-    expect(screen.getByText("Last 7 days")).toBeTruthy();
+    expect(screen.getByText(/完成一天的学习后/i)).toBeTruthy();
+    expect(screen.getByText("最近 7 天")).toBeTruthy();
     expect(container.innerHTML).not.toContain("NaN");
     expect(container.innerHTML).not.toContain("Infinity");
   });
 
   it("renders the approved supporting message", () => {
     render(<StatsPage appData={{ data: { records: {} } }} />);
-    expect(screen.getByText(/steady progress, not daily perfection/i)).toBeTruthy();
+    expect(screen.getByText(/保持稳定进步/i)).toBeTruthy();
   });
 
   it("renders optional stretch stats separately from core stats", () => {
@@ -186,14 +186,14 @@ describe("StatsPage", () => {
 
     render(<StatsPage appData={{ data: { records: { [stretchRecord.date]: stretchRecord } } }} />);
 
-    const stretchRegion = screen.getByRole("region", { name: /optional stretch/i });
+    const stretchRegion = screen.getByRole("region", { name: /可选加练/i });
     expect(stretchRegion).toBeTruthy();
-    expect(stretchRegion.textContent).toContain("No penalty");
+    expect(stretchRegion.textContent).toContain("跳过不扣分");
     expect(stretchRegion.textContent).toContain("25");
-    expect(stretchRegion.textContent).toContain("minutes");
+    expect(stretchRegion.textContent).toContain("分钟");
     expect(stretchRegion.textContent).toContain("1");
-    expect(stretchRegion.textContent).toContain("enabled days");
-    expect(stretchRegion.textContent).toContain("active days");
+    expect(stretchRegion.textContent).toContain("开启天数");
+    expect(stretchRegion.textContent).toContain("练习天数");
   });
 
   it("renders reward points and active goal progress", () => {
@@ -206,7 +206,7 @@ describe("StatsPage", () => {
               schemaVersion: 1,
               activeGoal: {
                 id: "goal-1",
-                title: "Hotpot dinner",
+                title: "吃一顿火锅",
                 targetPoints: 5,
                 note: "After steady study",
                 createdAt: "2026-07-10T00:00:00.000Z",
@@ -217,12 +217,12 @@ describe("StatsPage", () => {
       />,
     );
 
-    const rewardRegion = screen.getByRole("region", { name: /reward points/i });
+    const rewardRegion = screen.getByRole("region", { name: /学习积分/i });
 
-    expect(rewardRegion.textContent).toContain("Reward points");
+    expect(rewardRegion.textContent).toContain("学习积分");
     expect(rewardRegion.textContent).toContain("1.5");
-    expect(rewardRegion.textContent).toContain("Hotpot dinner");
-    expect(rewardRegion.textContent).toContain("3.5 remaining");
+    expect(rewardRegion.textContent).toContain("吃一顿火锅");
+    expect(rewardRegion.textContent).toContain("还差 3.5积分");
     expect(rewardRegion.textContent).toContain("30%");
   });
 
@@ -246,9 +246,9 @@ describe("StatsPage", () => {
       />,
     );
 
-    const rewardRegion = screen.getByRole("region", { name: /reward points/i });
+    const rewardRegion = screen.getByRole("region", { name: /学习积分/i });
 
-    expect(rewardRegion.textContent).toContain("Reward points");
-    expect(rewardRegion.textContent).toContain("Set a reward goal in Settings");
+    expect(rewardRegion.textContent).toContain("学习积分");
+    expect(rewardRegion.textContent).toContain("到设置中添加奖励目标");
   });
 });

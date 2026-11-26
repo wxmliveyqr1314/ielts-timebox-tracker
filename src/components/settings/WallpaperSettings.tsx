@@ -76,12 +76,12 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
     <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-6 wallpaper-surface">
       <div className="flex items-center gap-3 mb-4">
         <Image className="w-5 h-5 text-indigo-500" />
-        <h3 className="text-lg font-semibold text-slate-800 wallpaper-heading">Cloud Wallpaper</h3>
+        <h3 className="text-lg font-semibold text-slate-800 wallpaper-heading">云壁纸</h3>
       </div>
 
       {online === false && (
         <div className="rounded-lg border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-500/80 mb-4 font-semibold">
-          Wallpaper cloud controls are unavailable offline. Your cached wallpaper remains visible.
+          离线时无法修改云壁纸，已缓存的壁纸仍可显示。
         </div>
       )}
 
@@ -95,7 +95,7 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
           }`}
         >
           {wallpaper.notice.message}
-          <button onClick={wallpaper.clearNotice} className="float-right font-bold ml-2">&times;</button>
+          <button onClick={wallpaper.clearNotice} aria-label="关闭壁纸提示" className="float-right font-bold ml-2">&times;</button>
         </div>
       )}
 
@@ -108,7 +108,7 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
             <div className="absolute inset-0 bg-slate-950" style={{ opacity: localOpacity / 100 }} />
             {!wallpaper.active && (
               <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-slate-800 font-medium px-3 py-1 bg-white/80 rounded-md">Disabled</span>
+                <span className="text-slate-800 font-medium px-3 py-1 bg-white/80 rounded-md">已关闭</span>
               </div>
             )}
           </div>
@@ -122,7 +122,7 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
                 disabled={cloudControlsDisabled}
                 className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
-              <span className="text-sm font-medium text-slate-700">Enable wallpaper</span>
+              <span className="text-sm font-medium text-slate-700">启用壁纸</span>
             </label>
 
             <button
@@ -131,14 +131,14 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1 disabled:opacity-50"
             >
               <Trash2 className="w-4 h-4" />
-              Remove wallpaper
+              移除壁纸
             </button>
           </div>
 
           <div className="mt-4 flex items-center gap-3">
             <Eye className="w-4 h-4 text-slate-400" />
             <div className="flex-1">
-              <label htmlFor="overlayOpacity" className="sr-only">Overlay opacity</label>
+              <label htmlFor="overlayOpacity" className="sr-only">遮罩深度</label>
               <input
                 id="overlayOpacity"
                 type="range"
@@ -158,7 +158,7 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
 
       <div className="mt-5 pt-5 border-t border-slate-100">
         <label className="block text-sm font-medium text-slate-700 mb-2" htmlFor="wallpaperInput">
-          Choose wallpaper image
+          选择壁纸图片
         </label>
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <input
@@ -167,24 +167,32 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
-            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-50"
+            className="sr-only"
             disabled={cloudControlsDisabled}
           />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={cloudControlsDisabled}
+            className="min-w-0 flex-1 truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm text-slate-600 disabled:opacity-50"
+          >
+            {selectedFile ? selectedFile.name : "选择图片"}
+          </button>
           <button
             onClick={handleUpload}
             disabled={!selectedFile || cloudControlsDisabled}
             className="flex items-center justify-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors w-full sm:w-auto"
           >
-            {isBusy && wallpaper.busy === "upload" ? "Uploading..." : (
+            {isBusy && wallpaper.busy === "upload" ? "上传中…" : (
               <>
                 <Upload className="w-4 h-4" />
-                Upload & Apply
+                上传并应用
               </>
             )}
           </button>
         </div>
         {!signedIn && (
-          <p className="text-xs text-amber-600 mt-2">Sign in to change cloud wallpaper.</p>
+          <p className="text-xs text-amber-600 mt-2">登录后即可更换云壁纸。</p>
         )}
       </div>
 
@@ -192,9 +200,9 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-5">
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Remove Wallpaper?</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">确认移除壁纸？</h3>
               <p className="text-slate-600 text-sm">
-                This will delete the wallpaper from all devices. This action cannot be undone.
+                壁纸会从所有设备移除，此操作无法自动撤销。
               </p>
             </div>
             <div className="bg-slate-50 p-3 flex justify-end gap-2 border-t border-slate-100">
@@ -203,14 +211,14 @@ export function WallpaperSettings({ wallpaper, signedIn, online }: WallpaperSett
                 className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
                 disabled={isBusy}
               >
-                Cancel
+                取消
               </button>
               <button
                 onClick={handleRemove}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2"
                 disabled={cloudControlsDisabled}
               >
-                {isBusy && wallpaper.busy === "remove" ? "Removing..." : "Remove"}
+                {isBusy && wallpaper.busy === "remove" ? "移除中…" : "移除"}
               </button>
             </div>
           </div>

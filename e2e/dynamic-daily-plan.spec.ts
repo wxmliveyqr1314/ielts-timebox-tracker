@@ -22,7 +22,7 @@ function bonusInput(page: Page, label: string) {
 
 function summaryValue(page: Page, label: string) {
   return page
-    .getByRole("region", { name: "Plan summary" })
+    .getByRole("region", { name: "计划概览" })
     .getByText(label, { exact: true })
     .locator("..")
     .locator("span")
@@ -49,16 +49,16 @@ async function expectNoHorizontalOverflow(page: Page): Promise<void> {
 
 async function generateInitialDictationPlan(page: Page): Promise<void> {
   await page.goto("/");
-  await page.getByRole("button", { name: "Workday", exact: true }).click();
-  await page.getByRole("button", { name: "No", exact: true }).click();
-  await page.getByRole("button", { name: "Normal", exact: true }).click();
-  await page.getByRole("button", { name: "Dictation", exact: true }).click();
-  await bonusInput(page, "Momo Vocab").fill("20");
-  await bonusInput(page, "Wang Lu (Dict)").fill("30");
-  await bonusInput(page, "IELTS Reading").fill("10");
-  await bonusInput(page, "Passive Listen").fill("75");
-  await page.getByRole("button", { name: "Generate Plan" }).click();
-  await expect(page.getByRole("region", { name: "Plan summary" })).toBeVisible();
+  await page.getByRole("button", { name: "工作日", exact: true }).click();
+  await page.getByRole("button", { name: "否", exact: true }).click();
+  await page.getByRole("button", { name: "正常", exact: true }).click();
+  await page.getByRole("button", { name: "听写", exact: true }).click();
+  await bonusInput(page, "Momo 词汇").fill("20");
+  await bonusInput(page, "王陆听写").fill("30");
+  await bonusInput(page, "雅思阅读").fill("10");
+  await bonusInput(page, "泛听").fill("75");
+  await page.getByRole("button", { name: "生成计划" }).click();
+  await expect(page.getByRole("region", { name: "计划概览" })).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -70,10 +70,10 @@ test("generates a capacity-aware mobile plan from completed-earlier inputs", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await generateInitialDictationPlan(page);
 
-  await expect(summaryValue(page, "Mode target")).toHaveText("175m");
-  await expect(summaryValue(page, "Completed earlier")).toHaveText("-50m");
-  await expect(summaryValue(page, "Tonight focused")).toHaveText("125m");
-  await expect(page.getByText("Reference already met. Extra listening stays optional.")).toBeVisible();
+  await expect(summaryValue(page, "当前模式目标")).toHaveText("175分钟");
+  await expect(summaryValue(page, "提前完成的学习")).toHaveText("-50分钟");
+  await expect(summaryValue(page, "今晚必做")).toHaveText("125分钟");
+  await expect(page.getByText("已达到参考时长，额外泛听按需进行。")).toBeVisible();
 
   await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
@@ -84,16 +84,16 @@ test("optional stretch stays separate from baseline status on mobile", async ({ 
   await page.setViewportSize({ width: 390, height: 844 });
   await generateInitialDictationPlan(page);
 
-  await expect(summaryValue(page, "Tonight focused")).toHaveText("125m");
-  await page.getByRole("switch", { name: "Add optional stretch" }).click();
-  await page.getByRole("button", { name: "Same Focus" }).click();
-  await page.getByRole("button", { name: "Preview stretch changes" }).click();
+  await expect(summaryValue(page, "今晚必做")).toHaveText("125分钟");
+  await page.getByRole("switch", { name: "添加可选加练" }).click();
+  await page.getByRole("button", { name: "同方向加练" }).click();
+  await page.getByRole("button", { name: "预览加练变更" }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Review plan changes" });
-  await dialog.getByRole("button", { name: "Apply regenerated plan" }).click();
+  const dialog = page.getByRole("dialog", { name: "确认计划变更" });
+  await dialog.getByRole("button", { name: "应用新计划" }).click();
 
-  await expect(page.getByRole("region", { name: "Optional stretch tasks" })).toBeVisible();
-  await expect(page.getByText("0 penalty if skipped")).toBeVisible();
+  await expect(page.getByRole("region", { name: "可选加练任务" })).toBeVisible();
+  await expect(page.getByText("跳过不扣分")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });
@@ -103,37 +103,37 @@ test("preserves real task progress when regenerating a different plan", async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await generateInitialDictationPlan(page);
 
-  await page.getByRole("spinbutton", { name: "Actual minutes for New dictation unit" }).fill("18");
-  await page.getByRole("button", { name: "History" }).click();
-  await page.getByRole("button", { name: /^Expand / }).first().click();
+  await page.getByRole("spinbutton", { name: "新听写单元的实际分钟数" }).fill("18");
+  await page.getByRole("button", { name: "历史" }).click();
+  await page.getByRole("button", { name: /^展开/ }).first().click();
   const historyTask = page
-    .getByText("New dictation unit", { exact: true })
+    .getByText("新听写单元", { exact: true })
     .locator("xpath=ancestor::div[contains(@class, 'space-y-2')][1]");
-  await historyTask.getByPlaceholder("Task notes (optional)").fill("Preserve this note");
+  await historyTask.getByPlaceholder("任务备注（选填）").fill("Preserve this note");
 
-  await page.getByRole("button", { name: "Daily" }).click();
-  await page.getByRole("button", { name: "Edit plan inputs" }).click();
-  await page.getByRole("button", { name: "Low", exact: true }).click();
-  await page.getByRole("button", { name: "Reading", exact: true }).click();
-  await page.getByLabel("Focused minutes available tonight").fill("90");
-  await page.getByRole("button", { name: "Preview regenerated plan" }).click();
+  await page.getByRole("button", { name: "今日" }).click();
+  await page.getByRole("button", { name: "调整计划设置" }).click();
+  await page.getByRole("button", { name: "偏低", exact: true }).click();
+  await page.getByRole("button", { name: "阅读", exact: true }).click();
+  await page.getByLabel("今晚可用的专注学习时间").fill("90");
+  await page.getByRole("button", { name: "预览新计划" }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Review plan changes" });
-  await expect(dialog).toContainText("Actual minutes, completion, and notes will be preserved.");
-  await dialog.getByRole("button", { name: "Apply regenerated plan" }).click();
+  const dialog = page.getByRole("dialog", { name: "确认计划变更" });
+  await expect(dialog).toContainText("已记录的时长、完成情况和备注都会保留。");
+  await dialog.getByRole("button", { name: "应用新计划" }).click();
 
-  const earlierProgress = page.getByRole("region", { name: "Earlier progress" });
-  await expect(earlierProgress.getByText("New dictation unit", { exact: true })).toBeVisible();
+  const earlierProgress = page.getByRole("region", { name: "此前已完成" });
+  await expect(earlierProgress.getByText("新听写单元", { exact: true })).toBeVisible();
   await expect(
-    earlierProgress.getByRole("spinbutton", { name: "Actual minutes for New dictation unit" }),
+    earlierProgress.getByRole("spinbutton", { name: "新听写单元的实际分钟数" }),
   ).toHaveValue("18");
 
-  await page.getByRole("button", { name: "History" }).click();
-  await page.getByRole("button", { name: /^Expand / }).first().click();
+  await page.getByRole("button", { name: "历史" }).click();
+  await page.getByRole("button", { name: /^展开/ }).first().click();
   const preservedTask = page
-    .getByText("New dictation unit", { exact: true })
+    .getByText("新听写单元", { exact: true })
     .locator("xpath=ancestor::div[contains(@class, 'space-y-2')][1]");
-  await expect(preservedTask.getByPlaceholder("Task notes (optional)")).toHaveValue("Preserve this note");
+  await expect(preservedTask.getByPlaceholder("任务备注（选填）")).toHaveValue("Preserve this note");
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -143,25 +143,25 @@ test("persists the generated summary and reports completed-earlier totals once",
   await generateInitialDictationPlan(page);
 
   await page.reload();
-  await expect(summaryValue(page, "Mode target")).toHaveText("175m");
-  await expect(summaryValue(page, "Completed earlier")).toHaveText("-50m");
-  await expect(summaryValue(page, "Tonight focused")).toHaveText("125m");
+  await expect(summaryValue(page, "当前模式目标")).toHaveText("175分钟");
+  await expect(summaryValue(page, "提前完成的学习")).toHaveText("-50分钟");
+  await expect(summaryValue(page, "今晚必做")).toHaveText("125分钟");
 
-  await page.getByRole("button", { name: "History" }).click();
-  await page.getByRole("button", { name: /^Expand / }).first().click();
-  const historicalSummary = page.getByRole("region", { name: "Historical plan summary" });
-  await expect(historicalSummary.getByText("Workday", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "历史" }).click();
+  await page.getByRole("button", { name: /^展开/ }).first().click();
+  const historicalSummary = page.getByRole("region", { name: "历史计划概览" });
+  await expect(historicalSummary.getByText("工作日", { exact: true })).toBeVisible();
   await expect(
-    historicalSummary.getByText("Completed earlier", { exact: true }).first().locator("..").locator("span").last(),
-  ).toHaveText("135m");
+    historicalSummary.getByText("提前完成的学习", { exact: true }).first().locator("..").locator("span").last(),
+  ).toHaveText("135分钟");
 
-  await page.getByRole("button", { name: "Stats" }).click();
-  const timeByModule = page.getByText("Time by module", { exact: true }).locator("..");
+  await page.getByRole("button", { name: "统计" }).click();
+  const timeByModule = page.getByText("各项学习时长", { exact: true }).locator("..");
   for (const [label, minutes] of [
-    ["Momo", "20m"],
-    ["Dictation", "30m"],
-    ["Reading", "10m"],
-    ["Passive Listen", "75m"],
+    ["Momo", "20分钟"],
+    ["听写", "30分钟"],
+    ["阅读", "10分钟"],
+    ["泛听", "75分钟"],
   ] as const) {
     await expect(
       timeByModule.getByText(label, { exact: true }).locator("..").getByText(minutes, { exact: true }),

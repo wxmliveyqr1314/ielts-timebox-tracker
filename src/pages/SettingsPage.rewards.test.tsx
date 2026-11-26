@@ -68,19 +68,19 @@ describe("SettingsPage reward goal", () => {
     const saveRewardGoal = vi.fn();
     renderSettings({ records: {} }, { saveRewardGoal });
 
-    fireEvent.change(screen.getByLabelText("Reward title"), {
-      target: { value: "Hotpot dinner" },
+    fireEvent.change(screen.getByLabelText("奖励名称"), {
+      target: { value: "吃一顿火锅" },
     });
-    fireEvent.change(screen.getByLabelText("Target points"), {
+    fireEvent.change(screen.getByLabelText("目标积分"), {
       target: { value: "20" },
     });
-    fireEvent.change(screen.getByLabelText("Reward note"), {
+    fireEvent.change(screen.getByLabelText("奖励说明"), {
       target: { value: "After a focused streak" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save Reward Goal" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存奖励目标" }));
 
     expect(saveRewardGoal).toHaveBeenCalledWith({
-      title: "Hotpot dinner",
+      title: "吃一顿火锅",
       targetPoints: 20,
       note: "After a focused streak",
     });
@@ -110,7 +110,7 @@ describe("SettingsPage reward goal", () => {
     expect(screen.getByDisplayValue("35")).toBeDefined();
     expect(screen.getByDisplayValue("For stable study weeks")).toBeDefined();
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear Reward Goal" }));
+    fireEvent.click(screen.getByRole("button", { name: "清除奖励目标" }));
 
     expect(clearRewardGoal).toHaveBeenCalledTimes(1);
   });

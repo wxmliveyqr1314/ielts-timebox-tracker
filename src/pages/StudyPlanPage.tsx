@@ -7,6 +7,7 @@ import {
   type TaskLibraryGroup,
 } from "../planning/taskLibraryView";
 import type { IeltsSkill } from "../types";
+import { localizeTaskDefinition } from "../i18n/taskCopy";
 
 const groups = buildTaskLibraryGroups(TASK_REGISTRY);
 const tasks = Object.values(TASK_REGISTRY);
@@ -23,24 +24,23 @@ export function StudyPlanPage() {
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-black tracking-tight text-slate-800">
-              Study Plan
+              学习指南
             </h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
-              Task guide for the current IELTS routine
+              了解每项雅思学习任务的做法与完成标准
             </p>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-lg border border-slate-200 bg-white/40 text-center">
-          <SummaryMetric label="Total tasks" value={tasks.length} />
-          <SummaryMetric label="Focused tasks" value={focusedTaskCount} />
-          <SummaryMetric label="Reward tasks" value={rewardTaskCount} />
+          <SummaryMetric label="全部任务" value={tasks.length} />
+          <SummaryMetric label="专注任务" value={focusedTaskCount} />
+          <SummaryMetric label="计分任务" value={rewardTaskCount} />
         </div>
 
         <p className="mt-4 flex items-start gap-2 text-xs font-medium leading-relaxed text-slate-500">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400" />
-          This page is read-only. It explains what each task means, how to do it,
-          and what counts as done.
+          这里是只读指南，帮助你理解各项任务、具体做法和完成标准。
         </p>
       </section>
 
@@ -97,7 +97,8 @@ function renderTaskGroupSection(group: TaskLibraryGroup) {
   );
 }
 
-function renderTaskGuideCard(task: Readonly<TaskDefinition>) {
+function renderTaskGuideCard(definition: Readonly<TaskDefinition>) {
+  const task = localizeTaskDefinition(definition);
   return (
     <article key={task.id} className="rounded-lg border border-slate-200 bg-white/35 p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -122,19 +123,19 @@ function renderTaskGuideCard(task: Readonly<TaskDefinition>) {
       </div>
 
       <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
-        {task.description ?? "No description yet."}
+        {task.description ?? "暂无任务说明。"}
       </p>
 
       <div className="mt-3 grid gap-2">
         <GuidanceBlock
           icon={<ClipboardList className="h-4 w-4" />}
-          label="How to do it"
-          text={task.instruction ?? "Follow the daily plan and keep the task focused."}
+          label="具体做法"
+          text={task.instruction ?? "按照当天计划，专注完成这项任务。"}
         />
         <GuidanceBlock
           icon={<CheckCircle2 className="h-4 w-4" />}
-          label="Done when"
-          text={task.doneCriteria ?? "Complete the planned minutes honestly."}
+          label="完成标准"
+          text={task.doneCriteria ?? "如实完成计划时长。"}
         />
       </div>
     </article>
@@ -176,6 +177,5 @@ function getTaskBadges(task: Readonly<TaskDefinition>): string[] {
 }
 
 function formatSkill(skill?: IeltsSkill): string {
-  if (!skill) return "General";
-  return skill.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return ({ listening: "听力", reading: "阅读", speaking: "口语", writing: "写作", vocabulary: "词汇", review: "复习", planning: "计划", sleep: "睡眠" } as Record<string, string>)[skill ?? ""] ?? "通用";
 }

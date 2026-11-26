@@ -23,7 +23,7 @@ export function AppLayout({
             T
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-slate-800">
-            TimeBox <span className="text-slate-400 font-normal">Tracker</span>
+            TimeBox <span className="text-slate-400 font-normal">学习助手</span>
           </h1>
         </div>
       </header>
@@ -40,7 +40,7 @@ export function AppLayout({
         >
           {online === false && (
             <div role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-              Offline. Local records remain available; cloud actions are paused.
+              当前离线。本地记录仍可使用，云端操作暂不可用。
             </div>
           )}
           {children}

@@ -36,10 +36,7 @@ export function formatDateStr(dateStr: string): string {
     const normalized = normalizeDateString(dateStr);
     if (!normalized) return dateStr;
     const [year, month, day] = normalized.split("-").map(Number);
-    const d = new Date(Date.UTC(year, month - 1, day));
-    // Since format expects a local date, we just manually format it to avoid timezone shifting
-    const mStr = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
-    return `${mStr} ${day}, ${year}`;
+    return `${year}年${month}月${day}日`;
   } catch (e) {
     return dateStr;
   }

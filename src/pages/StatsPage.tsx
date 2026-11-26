@@ -67,7 +67,7 @@ export function StatsPage({ appData }: { appData: any }) {
 
   const footerMessage = (
     <div className="text-center text-xs font-semibold text-slate-400 px-4 mt-2">
-      "Green and yellow both keep the streak alive. The goal is steady progress, not daily perfection."
+      达标与部分完成都能延续连续记录。保持稳定进步，也给自己留出恢复的空间。
     </div>
   );
 
@@ -75,10 +75,10 @@ export function StatsPage({ appData }: { appData: any }) {
     <div className="flex items-center justify-between wallpaper-surface p-4 rounded-lg border border-slate-200 shadow-sm">
       <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
         <Activity className="w-6 h-6 text-indigo-500" />
-        Stats
+        统计
       </h1>
       <div className="bg-slate-100/50 backdrop-blur-sm text-slate-500 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
-        Last 7 days
+        最近 7 天
       </div>
     </div>
   );
@@ -89,8 +89,8 @@ export function StatsPage({ appData }: { appData: any }) {
         {header}
         <div className="py-20 text-center wallpaper-surface rounded-lg border border-slate-200">
           <Activity className="w-6 h-6 mx-auto text-slate-400 mb-3" />
-          <p className="text-sm font-semibold text-slate-600">No stats yet</p>
-          <p className="text-xs text-slate-500 mt-1">Complete a day to see your trends.</p>
+          <p className="text-sm font-semibold text-slate-600">暂无统计数据</p>
+          <p className="text-xs text-slate-500 mt-1">完成一天的学习后，即可查看变化。</p>
         </div>
         {footerMessage}
       </div>
@@ -104,31 +104,31 @@ export function StatsPage({ appData }: { appData: any }) {
       {/* 核心卡片 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="col-span-2 sm:col-span-1">
-          <MetricCard title="Current streak" icon={<Flame className="w-5 h-5 text-orange-500" />}>
+          <MetricCard title="当前连续学习" icon={<Flame className="w-5 h-5 text-orange-500" />}>
             <div className="flex items-end gap-2">
               <span className="text-3xl font-black text-slate-800">{streak}</span>
-              <span className="text-xs font-bold text-slate-500 pb-1 uppercase">Days</span>
+              <span className="text-xs font-bold text-slate-500 pb-1 uppercase">天</span>
             </div>
             <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase flex items-center gap-1">
-              <Award className="w-3 h-3" /> Best: {longestStreak} Days
+              <Award className="w-3 h-3" /> 历史最佳：{longestStreak}天
             </div>
           </MetricCard>
         </div>
 
-        <MetricCard title="Study time" icon={<Clock className="w-5 h-5 text-indigo-500" />}>
-          <div className="flex items-end gap-2 text-3xl font-black text-slate-800 tracking-tight">
+        <MetricCard title="学习时长" icon={<Clock className="w-5 h-5 text-indigo-500" />}>
+          <div className="flex items-end gap-2 text-xl font-black text-slate-800 tracking-tight">
             {formatMinutes(moduleMins.totalFormal)}
           </div>
-          <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase">Formal Only</div>
+          <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase">仅计正式学习</div>
         </MetricCard>
 
-        <MetricCard title="Speaking" icon={<Mic className="w-5 h-5 text-emerald-500" />}>
+        <MetricCard title="口语" icon={<Mic className="w-5 h-5 text-emerald-500" />}>
           <div className="flex items-end gap-2">
             <span className="text-3xl font-black text-slate-800">{speakingStats.daysCompleted}</span>
-            <span className="text-xs font-bold text-slate-500 pb-1 uppercase">Days</span>
+            <span className="text-xs font-bold text-slate-500 pb-1 uppercase">天</span>
           </div>
           <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase">
-            Avg {speakingStats.avgMinutes}m / day
+            平均每天 {speakingStats.avgMinutes}分钟
           </div>
         </MetricCard>
       </div>
@@ -137,29 +137,29 @@ export function StatsPage({ appData }: { appData: any }) {
       <section
         className="wallpaper-surface rounded-lg border border-slate-200 bg-white/80 p-4 shadow-sm"
         role="region"
-        aria-label="Reward points"
+        aria-label="学习积分"
       >
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
             <Award className="w-4 h-4 text-amber-500" />
-            Reward points
+            学习积分
           </h2>
           <span className="shrink-0 text-[10px] font-semibold text-slate-400">
-            Motivation only
+            用于鼓励坚持
           </span>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="font-mono text-lg font-bold text-slate-800">{formatPoints(rewardSummary.totalPoints)}</p>
-            <p className="text-[10px] text-slate-500">total</p>
+            <p className="text-[10px] text-slate-500">累计积分</p>
           </div>
           <div>
             <p className="font-mono text-lg font-bold text-slate-800">{formatPoints(rewardSummary.recent7Points)}</p>
-            <p className="text-[10px] text-slate-500">last 7 days</p>
+            <p className="text-[10px] text-slate-500">最近 7 天</p>
           </div>
           <div>
             <p className="font-mono text-lg font-bold text-slate-800">{formatPoints(rewardSummary.averagePointsPerCompletedDay)}</p>
-            <p className="text-[10px] text-slate-500">avg / active day</p>
+            <p className="text-[10px] text-slate-500">每个记录日平均</p>
           </div>
         </div>
         {rewardSummary.goalTitle ? (
@@ -168,7 +168,7 @@ export function StatsPage({ appData }: { appData: any }) {
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-slate-800">{rewardSummary.goalTitle}</p>
                 <p className="text-[10px] text-slate-500">
-                  {formatPoints(rewardSummary.pointsRemaining || 0)} remaining
+                  还差 {formatPoints(rewardSummary.pointsRemaining || 0)}积分
                 </p>
               </div>
               <span className="shrink-0 font-mono text-sm font-bold text-indigo-600">
@@ -184,7 +184,7 @@ export function StatsPage({ appData }: { appData: any }) {
           </div>
         ) : (
           <p className="mt-3 text-xs text-slate-500">
-            Set a reward goal in Settings to track progress toward something tangible.
+            到设置中添加奖励目标，看看离心愿还有多远。
           </p>
         )}
       </section>
@@ -192,34 +192,34 @@ export function StatsPage({ appData }: { appData: any }) {
       <section
         className="wallpaper-surface rounded-lg border border-slate-200 bg-white/80 p-4 shadow-sm"
         role="region"
-        aria-label="Optional stretch"
+        aria-label="可选加练"
       >
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
-            Optional Stretch
+            可选加练
           </h2>
           <span className="shrink-0 text-[10px] font-semibold text-slate-400">
-            All time · No penalty
+            累计 · 跳过不扣分
           </span>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="font-mono text-lg font-bold text-slate-800">{stretchStats.completedMinutes}</p>
-            <p className="text-[10px] text-slate-500">minutes</p>
+            <p className="text-[10px] text-slate-500">分钟</p>
           </div>
           <div>
             <p className="font-mono text-lg font-bold text-slate-800">{stretchStats.enabledDays}</p>
-            <p className="text-[10px] text-slate-500">enabled days</p>
+            <p className="text-[10px] text-slate-500">开启天数</p>
           </div>
           <div>
             <p className="font-mono text-lg font-bold text-slate-800">{stretchStats.partialDays}</p>
-            <p className="text-[10px] text-slate-500">active days</p>
+            <p className="text-[10px] text-slate-500">练习天数</p>
           </div>
         </div>
       </section>
 
-      <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm wallpaper-surface" role="region" aria-label="Status distribution">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Status distribution</h2>
+      <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm wallpaper-surface" role="region" aria-label="完成情况">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">完成情况</h2>
         <div className="space-y-3">
           <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
             {recent7.length > 0 ? (
@@ -234,19 +234,19 @@ export function StatsPage({ appData }: { appData: any }) {
           <div className="flex items-center justify-between text-center">
             <div className="flex flex-col flex-1">
               <span className="text-lg font-black text-emerald-600">{statusCounts.green}</span>
-              <span className="text-[10px] uppercase font-bold text-emerald-500">Green</span>
+              <span className="text-[10px] uppercase font-bold text-emerald-500">达标</span>
             </div>
             <div className="flex flex-col flex-1 border-l border-slate-100">
               <span className="text-lg font-black text-amber-600">{statusCounts.yellow}</span>
-              <span className="text-[10px] uppercase font-bold text-amber-500">Yellow</span>
+              <span className="text-[10px] uppercase font-bold text-amber-500">部分完成</span>
             </div>
             <div className="flex flex-col flex-1 border-l border-slate-100">
               <span className="text-lg font-black text-rose-600">{statusCounts.red}</span>
-              <span className="text-[10px] uppercase font-bold text-rose-500">Red</span>
+              <span className="text-[10px] uppercase font-bold text-rose-500">需调整</span>
             </div>
             <div className="flex flex-col flex-1 border-l border-slate-100">
               <span className="text-lg font-black text-slate-500">{statusCounts.pending}</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400">Pending</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400">待开始</span>
             </div>
           </div>
         </div>
@@ -254,37 +254,37 @@ export function StatsPage({ appData }: { appData: any }) {
 
       {/* 模块时长统计 */}
       <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm wallpaper-surface">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Time by module</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">各项学习时长</h2>
         <div className="space-y-3">
           <StatBar label="Momo" value={moduleMins.totalMomo} max={140} color="bg-indigo-500" icon={<BookOpen className="w-3.5 h-3.5" />} />
-          <StatBar label="Dictation" value={moduleMins.totalDictation} max={210} color="bg-sky-500" icon={<Headphones className="w-3.5 h-3.5" />} />
-          <StatBar label="Reading" value={moduleMins.totalReading} max={210} color="bg-emerald-500" icon={<BookOpen className="w-3.5 h-3.5" />} />
-          <StatBar label="Speaking" value={moduleMins.totalSpeaking} max={210} color="bg-amber-500" icon={<Mic className="w-3.5 h-3.5" />} />
-          <StatBar label="Passive Listen" value={moduleMins.totalPassive} max={210} color="bg-slate-400" icon={<Headphones className="w-3.5 h-3.5" />} />
+          <StatBar label="听写" value={moduleMins.totalDictation} max={210} color="bg-sky-500" icon={<Headphones className="w-3.5 h-3.5" />} />
+          <StatBar label="阅读" value={moduleMins.totalReading} max={210} color="bg-emerald-500" icon={<BookOpen className="w-3.5 h-3.5" />} />
+          <StatBar label="口语" value={moduleMins.totalSpeaking} max={210} color="bg-amber-500" icon={<Mic className="w-3.5 h-3.5" />} />
+          <StatBar label="泛听" value={moduleMins.totalPassive} max={210} color="bg-slate-400" icon={<Headphones className="w-3.5 h-3.5" />} />
         </div>
       </div>
 
       {/* 防熬夜统计 */}
       <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm wallpaper-surface">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-          <Moon className="w-4 h-4 text-slate-400" /> Sleep control
+          <Moon className="w-4 h-4 text-slate-400" /> 睡眠保护
         </h2>
         <div className="flex flex-col">
           <div className="flex justify-between items-center py-3 border-b border-slate-100 last:border-b-0">
             <span className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-              <Moon className="w-4 h-4 text-emerald-500" /> Stopped On Time
+              <Moon className="w-4 h-4 text-emerald-500" /> 按时收尾
             </span>
             <span className="text-sm font-bold text-emerald-600">{sleepStats.stoppedOnTime}</span>
           </div>
           <div className="flex justify-between items-center py-3 border-b border-slate-100 last:border-b-0">
             <span className={cn("text-sm font-semibold flex items-center gap-2", sleepStats.lateNewTask > 0 ? "text-rose-600" : "text-slate-600")}>
-              <ShieldAlert className={cn("w-4 h-4", sleepStats.lateNewTask > 0 ? "text-rose-500" : "text-slate-400")} /> Late New Task
+              <ShieldAlert className={cn("w-4 h-4", sleepStats.lateNewTask > 0 ? "text-rose-500" : "text-slate-400")} /> 较晚开启新任务
             </span>
             <span className={cn("text-sm font-bold", sleepStats.lateNewTask > 0 ? "text-rose-600" : "text-slate-800")}>{sleepStats.lateNewTask}</span>
           </div>
           <div className="flex justify-between items-center py-3 border-b border-slate-100 last:border-b-0">
             <span className={cn("text-sm font-semibold flex items-center gap-2", sleepStats.compensatoryStayingUp > 0 ? "text-rose-600" : "text-slate-600")}>
-              <ShieldAlert className={cn("w-4 h-4", sleepStats.compensatoryStayingUp > 0 ? "text-rose-500" : "text-slate-400")} /> Compensatory Stay Up
+              <ShieldAlert className={cn("w-4 h-4", sleepStats.compensatoryStayingUp > 0 ? "text-rose-500" : "text-slate-400")} /> 补偿性熬夜
             </span>
             <span className={cn("text-sm font-bold", sleepStats.compensatoryStayingUp > 0 ? "text-rose-600" : "text-slate-800")}>{sleepStats.compensatoryStayingUp}</span>
           </div>
@@ -303,7 +303,7 @@ function StatBar({ label, value, max, color, icon }: { label: string; value: num
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between text-xs font-bold">
         <span className="text-slate-600 flex items-center gap-1.5">{icon} {label}</span>
-        <span className="text-slate-700">{value}m</span>
+        <span className="text-slate-700">{value}分钟</span>
       </div>
       <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
         <div 

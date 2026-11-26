@@ -17,38 +17,38 @@ type TaskLibraryGroupDefinition = Omit<TaskLibraryGroup, "tasks">;
 const GROUP_DEFINITIONS: readonly TaskLibraryGroupDefinition[] = [
   {
     id: "vocabulary",
-    title: "Vocabulary",
-    description: "Vocabulary memory and review tasks that support all skills.",
+    title: "词汇",
+    description: "通过词汇记忆与复习，为各项英语能力打好基础。",
   },
   {
     id: "listening",
-    title: "Listening",
-    description: "Dictation, listening review, and passive listening reference.",
+    title: "听力",
+    description: "听写、听力复习与泛听参考任务。",
   },
   {
     id: "reading",
-    title: "Reading",
-    description: "Passage scanning, sentence analysis, and paraphrase notes.",
+    title: "阅读",
+    description: "文章速览、长难句分析与同义替换笔记。",
   },
   {
     id: "speaking",
-    title: "Speaking",
-    description: "Shadowing, AI conversation, correction, and retake practice.",
+    title: "口语",
+    description: "跟读、AI 对话、纠错与重录练习。",
   },
   {
     id: "review-planning",
-    title: "Review and Planning",
-    description: "Light review blocks and tomorrow-first-step planning.",
+    title: "复习与计划",
+    description: "轻量复习，并安排明天的第一步。",
   },
   {
     id: "sleep-protection",
-    title: "Sleep Protection",
-    description: "Control checks that protect recovery and next-day capacity.",
+    title: "睡眠保护",
+    description: "通过收尾检查保护睡眠，留住明天的精力。",
   },
   {
     id: "other",
-    title: "Other",
-    description: "Future or uncategorized study tasks.",
+    title: "其他",
+    description: "尚未归类的学习任务。",
   },
 ] as const;
 
@@ -124,20 +124,18 @@ export function formatTaskLibraryBadge(
   value: StatusRole | CapacityKind | CreditGroup | boolean,
 ): string {
   if (type === "reward") {
-    return value ? "Reward" : "No reward";
+    return value ? "可计分" : "不计分";
   }
 
   if (type === "formal") {
-    return value ? "Formal" : "Support";
+    return value ? "正式学习" : "辅助任务";
   }
 
   if (type === "credit") {
-    return `${capitalizeWords(String(value).replace(/_/g, " "))} credit`;
+    const groups: Record<string, string> = { momo: "词汇", dictation: "听写", reading: "阅读", speaking: "口语", passive_listening: "泛听" };
+    return `${groups[String(value)] ?? "同类学习"}可抵扣`;
   }
 
-  return capitalizeWords(String(value).replace(/_/g, " "));
-}
-
-function capitalizeWords(value: string): string {
-  return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const labels: Record<string, string> = { required: "必做", optional: "可选", ignored: "不影响状态", control: "收尾检查", focused: "专注学习", parallel: "可并行", anchor: "收尾任务", stretch: "可选加练" };
+  return labels[String(value)] ?? "其他";
 }

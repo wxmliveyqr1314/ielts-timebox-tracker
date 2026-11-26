@@ -38,8 +38,8 @@ describe("SettingsPage offline guards", () => {
         online={true}
       />,
     );
-    expect(screen.getByText(/check whether its Supabase project is paused/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Send Magic Link" })).toBeTruthy();
+    expect(screen.getByText(/检查 Supabase 项目是否已暂停/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "发送登录邮件" })).toBeTruthy();
   });
 
   it("explains rejected email delivery and lets the user try again", async () => {
@@ -57,12 +57,12 @@ describe("SettingsPage offline guards", () => {
         online={true}
       />,
     );
-    fireEvent.change(screen.getByPlaceholderText("Enter your email"), {
+    fireEvent.change(screen.getByPlaceholderText("请输入邮箱地址"), {
       target: { value: "learner@example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Send Magic Link" }));
-    expect(await screen.findByText(/check whether its Supabase project is paused/i)).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Send Magic Link" }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "发送登录邮件" }));
+    expect(await screen.findByText(/检查 Supabase 项目是否已暂停/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "发送登录邮件" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("disables auth and sync actions when offline", () => {
@@ -87,12 +87,12 @@ describe("SettingsPage offline guards", () => {
       />
     );
 
-    expect(screen.getByText("Cloud account and sync actions are unavailable offline. Local data remains available.")).toBeDefined();
+    expect(screen.getByText("离线时无法使用账户和云同步，本地数据仍可使用。")).toBeDefined();
 
-    const emailInput = screen.getByPlaceholderText("Enter your email");
-    const sendBtn = screen.getByRole("button", { name: "Send Magic Link" }) as HTMLButtonElement;
-    const otpInput = screen.getByPlaceholderText("6-digit code (if you didn't click the link)");
-    const verifyBtn = screen.getByRole("button", { name: "Verify Code" }) as HTMLButtonElement;
+    const emailInput = screen.getByPlaceholderText("请输入邮箱地址");
+    const sendBtn = screen.getByRole("button", { name: "发送登录邮件" }) as HTMLButtonElement;
+    const otpInput = screen.getByPlaceholderText("输入邮件中的 6 位验证码");
+    const verifyBtn = screen.getByRole("button", { name: "验证登录" }) as HTMLButtonElement;
 
     expect(sendBtn.disabled).toBe(true);
     expect(verifyBtn.disabled).toBe(true);
@@ -113,7 +113,7 @@ describe("SettingsPage offline guards", () => {
       />
     );
 
-    const syncBtn = screen.getByRole("button", { name: "Sync now" }) as HTMLButtonElement;
+    const syncBtn = screen.getByRole("button", { name: "立即同步" }) as HTMLButtonElement;
     expect(syncBtn.disabled).toBe(true);
   });
 });

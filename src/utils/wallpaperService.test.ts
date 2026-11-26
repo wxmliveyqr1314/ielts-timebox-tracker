@@ -56,7 +56,7 @@ describe("wallpaper service orchestration", () => {
     const deps = makeDeps({ remove: vi.fn().mockRejectedValue(new Error("cleanup failed")) });
     const result = await replaceWallpaper({ userId: "user-1", image, previous, overlayOpacity: 42, deps });
     expect(result.preference.wallpaperPath).toBe("user-1/1782547200000.webp");
-    expect(result.cleanupWarning).toContain("previous file");
+    expect(result.cleanupWarning).toContain("此前的壁纸文件");
   });
 
   it("clears preference and local cache before removing the cloud object", async () => {
@@ -75,7 +75,7 @@ describe("wallpaper service orchestration", () => {
     const deps = makeDeps({ saveCache: vi.fn().mockRejectedValue(new Error("cache failed")) });
     const result = await replaceWallpaper({ userId: "user-1", image, previous, overlayOpacity: 42, deps });
     expect(result.preference.wallpaperPath).toBe("user-1/1782547200000.webp");
-    expect(result.cleanupWarning).toContain("could not be cached locally");
+    expect(result.cleanupWarning).toContain("本地缓存失败");
     expect(deps.remove).toHaveBeenCalledWith("user-1/old.webp");
   });
 
@@ -83,7 +83,7 @@ describe("wallpaper service orchestration", () => {
     const deps = makeDeps({ clearCache: vi.fn().mockRejectedValue(new Error("cache failed")) });
     const result = await removeWallpaper({ current: previous, deps });
     expect(result.preference.wallpaperEnabled).toBe(false);
-    expect(result.cleanupWarning).toContain("local cache could not be deleted");
+    expect(result.cleanupWarning).toContain("本地缓存未能删除");
     expect(deps.remove).toHaveBeenCalledWith("user-1/old.webp");
   });
 });

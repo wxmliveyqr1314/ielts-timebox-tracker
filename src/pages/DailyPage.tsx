@@ -29,6 +29,7 @@ import { syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
 import { PlanSummary } from "../components/daily/PlanSummary";
 import { PlanSections } from "../components/daily/PlanSections";
 import { RegenerationPreview } from "../components/daily/RegenerationPreview";
+import { formatDayStatus, formatEnergyLevel, formatFocusMode } from "../utils/display";
 
 interface DailyPageProps {
   appData: any; // ReturnType of useAppData
@@ -59,7 +60,7 @@ export function DailyPage({ appData }: DailyPageProps) {
 
   const handleDelete = (date: string) => {
     appData.deleteRecord(date);
-    setDeleteMessage("Record deleted locally. Tap Sync now in Settings to update cloud backup.");
+    setDeleteMessage("本地记录已删除。请到设置点击“立即同步”，更新云端备份。");
   };
 
   return (
@@ -124,12 +125,12 @@ function ConfigForm({
     <div className="space-y-6">
       <div>
         <label className="mb-3 block text-sm font-semibold text-slate-700">
-          Day context
+          当天安排
         </label>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { value: "workday" as const, label: "Workday" },
-            { value: "rest_day" as const, label: "Rest day" },
+            { value: "workday" as const, label: "工作日" },
+            { value: "rest_day" as const, label: "休息日" },
           ].map((option) => (
             <button
               type="button"
@@ -150,7 +151,7 @@ function ConfigForm({
 
       <div>
         <label className="text-sm font-semibold text-slate-700 block mb-3 flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-slate-400" /> Workout Completed?
+          <Dumbbell className="w-4 h-4 text-slate-400" /> 今天运动了吗？
         </label>
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -162,7 +163,7 @@ function ConfigForm({
                 : "border-slate-200 text-slate-500 hover:bg-slate-50",
             )}
           >
-            Yes
+            是
           </button>
           <button
             onClick={() => setExercised(false)}
@@ -173,20 +174,20 @@ function ConfigForm({
                 : "border-slate-200 text-slate-500 hover:bg-slate-50",
             )}
           >
-            No
+            否
           </button>
         </div>
       </div>
 
       <div>
         <label className="text-sm font-semibold text-slate-700 block mb-3 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-slate-400" /> Energy Level
+          <Zap className="w-4 h-4 text-slate-400" /> 精力状态
         </label>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { val: "low", label: "Low" },
-            { val: "normal", label: "Normal" },
-            { val: "high", label: "High" },
+            { val: "low", label: "偏低" },
+            { val: "normal", label: "正常" },
+            { val: "high", label: "充沛" },
           ].map((level) => (
             <button
               key={level.val}
@@ -206,14 +207,14 @@ function ConfigForm({
 
       <div>
         <label className="text-sm font-semibold text-slate-700 block mb-3 flex items-center gap-2">
-          <CheckSquare className="w-4 h-4 text-slate-400" /> Focus Mode
+          <CheckSquare className="w-4 h-4 text-slate-400" /> 学习重点
         </label>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { val: "listening_focus", label: "Dictation" },
-            { val: "reading_focus", label: "Reading" },
-            { val: "speaking_focus", label: "Speaking" },
-            { val: "recovery", label: "Recovery" },
+            { val: "listening_focus", label: "听写" },
+            { val: "reading_focus", label: "阅读" },
+            { val: "speaking_focus", label: "口语" },
+            { val: "recovery", label: "恢复日" },
           ].map((type) => (
             <button
               key={type.val}
@@ -234,15 +235,15 @@ function ConfigForm({
       <div>
         <label className="text-sm font-semibold text-slate-700 block mb-3 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-slate-400" />
-          {dayContext === "workday" ? "Completed during workday" : "Completed earlier today"}
+          {dayContext === "workday" ? "工作期间已完成" : "今天已提前完成"}
         </label>
         <p className="mb-3 text-xs leading-relaxed text-slate-500">
-          Enter minutes already completed before generating this plan. Matching focused work reduces tonight's target.
+          填写生成计划前已经完成的学习时长，同类专注学习可抵扣今晚的任务。
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1 font-bold">
-              Momo Vocab
+              Momo 词汇
             </label>
             <input
               type="number"
@@ -260,7 +261,7 @@ function ConfigForm({
           </div>
           <div>
             <label className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1 font-bold">
-              Passive Listen
+              泛听
             </label>
             <input
               type="number"
@@ -278,7 +279,7 @@ function ConfigForm({
           </div>
           <div>
             <label className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1 font-bold">
-              Wang Lu (Dict)
+              王陆听写
             </label>
             <input
               type="number"
@@ -296,7 +297,7 @@ function ConfigForm({
           </div>
           <div>
             <label className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1 font-bold">
-              IELTS Reading
+              雅思阅读
             </label>
             <input
               type="number"
@@ -314,10 +315,10 @@ function ConfigForm({
           </div>
           <div>
             <label className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1 font-bold">
-              Speaking
+              口语
             </label>
             <input
-              aria-label="Speaking bonus minutes"
+              aria-label="已完成的口语时长"
               type="number"
               min="0"
               value={workdayBonus.speakingMinutes || ""}
@@ -336,10 +337,10 @@ function ConfigForm({
 
       <div>
         <label htmlFor="available-focused-minutes" className="block text-sm font-semibold text-slate-700">
-          Focused minutes available tonight
+          今晚可用的专注学习时间
         </label>
         <p className="mt-1 text-xs text-slate-500">
-          Optional. Leave blank to use the default: {defaultFocusedMinutes} minutes.
+          选填。留空使用默认值：{defaultFocusedMinutes}分钟。
         </p>
         <input
           id="available-focused-minutes"
@@ -418,31 +419,31 @@ function SetupDaily({
   };
 
   const renderRecommendationBanner = () => {
-    let title = "Recommended: ";
-    if (recommendation.recommendedMode === "listening_focus") title += "Dictation";
-    else if (recommendation.recommendedMode === "reading_focus") title += "Reading";
-    else if (recommendation.recommendedMode === "speaking_focus") title += "Speaking";
-    else title += "Recovery";
+    let title = "建议学习：";
+    if (recommendation.recommendedMode === "listening_focus") title += "听写";
+    else if (recommendation.recommendedMode === "reading_focus") title += "阅读";
+    else if (recommendation.recommendedMode === "speaking_focus") title += "口语";
+    else title += "恢复日";
 
     let desc = "";
     switch (recommendation.reason) {
       case "first_day":
-        desc = "Welcome! Starting with a Dictation day is recommended.";
+        desc = "欢迎回来！首次使用建议从听写开始。";
         break;
       case "advance_after_green":
-        desc = "Yesterday's focus was Green, so today's focus advances.";
+        desc = "昨天已达标，今天按顺序进入下一个学习重点。";
         break;
       case "recovery_after_non_green":
-        desc = "Yesterday was not completed as Green, so today uses a Recovery plan.";
+        desc = "昨天尚未达标，今天建议采用恢复计划。";
         break;
       case "continue_recovery":
-        desc = "Yesterday's Recovery was not Green, so we continue Recovery today.";
+        desc = "昨天的恢复计划尚未达标，今天继续恢复。";
         break;
       case "resume_after_recovery":
-        desc = "Recovery was successful! Resuming the previous normal focus mode.";
+        desc = "恢复计划已达标，继续此前的常规学习重点。";
         break;
       case "missing_previous_day":
-        desc = "Missing recent records. Let's do a Recovery day to get back on track.";
+        desc = "最近有记录缺失，建议先用恢复日重新进入学习节奏。";
         break;
     }
 
@@ -458,7 +459,7 @@ function SetupDaily({
         {recommendation.basedOnDate && (
           <div className="flex flex-wrap gap-2">
             <span className="text-[10px] bg-indigo-100/80 text-indigo-700 px-2 py-1 rounded-md font-bold tracking-wide">
-              {recommendation.basedOnDate}
+              {formatDateStr(recommendation.basedOnDate)}
             </span>
             {recommendation.basedOnStatus && (
               <span className={`text-[10px] px-2 py-1 rounded-md font-bold tracking-wide uppercase ${
@@ -467,12 +468,12 @@ function SetupDaily({
                 recommendation.basedOnStatus === 'red' ? 'bg-rose-100 text-rose-700' :
                 'bg-slate-200 text-slate-700'
               }`}>
-                {recommendation.basedOnStatus}
+                {formatDayStatus(recommendation.basedOnStatus)}
               </span>
             )}
             {recommendation.basedOnMode && (
               <span className="text-[10px] bg-indigo-100/80 text-indigo-700 px-2 py-1 rounded-md font-bold tracking-wide uppercase">
-                {recommendation.basedOnMode.replace('_focus', '')}
+                {formatFocusMode(recommendation.basedOnMode)}
               </span>
             )}
           </div>
@@ -487,7 +488,7 @@ function SetupDaily({
 
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm wallpaper-surface">
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
-          Daily Configuration <span className="text-slate-300">/</span> {formatDateStr(today)}
+          今日设置 <span className="text-slate-300">/</span> {formatDateStr(today)}
         </h2>
 
         <ConfigForm
@@ -510,7 +511,7 @@ function SetupDaily({
         onClick={handleStart}
         className="w-full py-3 bg-slate-900 text-white text-sm font-bold rounded-xl tracking-wider shadow-md shadow-slate-200 hover:bg-slate-800 transition-colors"
       >
-        Generate Plan
+        生成计划
       </button>
     </div>
   );
@@ -714,9 +715,9 @@ function TrackerDaily({
             {formatDateStr(today)}
           </h2>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <span>{record.dayType === 'listening_focus' ? 'Dictation' : record.dayType === 'reading_focus' ? 'Reading' : record.dayType === 'speaking_focus' ? 'Speaking' : 'Recovery'}</span>
+            <span>{record.dayType === 'listening_focus' ? "听写" : record.dayType === 'reading_focus' ? "阅读" : record.dayType === 'speaking_focus' ? "口语" : "恢复日"}</span>
             <span className="text-slate-300">/</span>
-            <span>{record.energyLevel.toUpperCase()} ENERGY</span>
+            <span>{formatEnergyLevel(record.energyLevel)}</span>
           </div>
         </div>
         <div className="flex gap-2 items-center">
@@ -726,11 +727,11 @@ function TrackerDaily({
               statusColors[record.status || "pending"],
             )}
           >
-            {(record.status || "pending").toUpperCase()}
+            {formatDayStatus(record.status || "pending")}
           </span>
           <button
             onClick={() => setShowConfig(!showConfig)}
-            aria-label="Edit plan inputs"
+            aria-label="调整计划设置"
             className="p-2 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
           >
             <Settings2 className="w-4 h-4" />
@@ -769,7 +770,7 @@ function TrackerDaily({
                 onClick={handleApplyConfig}
                 className="w-full py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl tracking-widest uppercase shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
               >
-                Preview regenerated plan
+                预览新计划
               </button>
             </div>
           )}
@@ -783,11 +784,10 @@ function TrackerDaily({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-bold text-slate-800">
-                  Optional stretch
+                  可选加练
                 </h3>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                  Unused focused capacity: {unusedFocusedCapacity}m. Optional
-                  work does not affect today's color status.
+                  剩余可用时间：{unusedFocusedCapacity}分钟。加练不影响当天的完成状态。
                 </p>
               </div>
               <button
@@ -796,10 +796,10 @@ function TrackerDaily({
                 aria-checked={localConfig.stretchEnabled}
                 aria-label={
                   localConfig.stretchEnabled
-                    ? "Disable optional stretch"
+                    ? "关闭可选加练"
                     : unusedFocusedCapacity > 0
-                      ? "Add optional stretch"
-                      : "No stretch capacity"
+                      ? "添加可选加练"
+                      : "暂无加练余量"
                 }
                 disabled={unusedFocusedCapacity === 0 && !localConfig.stretchEnabled}
                 onClick={() =>
@@ -835,7 +835,7 @@ function TrackerDaily({
                 <div
                   role="group"
                   className="grid grid-cols-2 gap-2"
-                  aria-label="Stretch strategy"
+                  aria-label="加练方式"
                 >
                   {(["same_focus", "balanced"] as const).map((strategy) => {
                     const selected = localConfig.stretchStrategy === strategy;
@@ -857,13 +857,13 @@ function TrackerDaily({
                             : "border-slate-200 bg-white/80 text-slate-600",
                         )}
                       >
-                        {strategy === "same_focus" ? "Same Focus" : "Balanced"}
+                        {strategy === "same_focus" ? "同方向加练" : "均衡加练"}
                       </button>
                     );
                   })}
                 </div>
                 <p className="mt-2 text-[10px] font-semibold text-indigo-500">
-                  No penalty if skipped. Confirm changes before rebuilding the plan.
+                  跳过加练不扣分。确认变更后再更新计划。
                 </p>
               </div>
             )}
@@ -874,7 +874,7 @@ function TrackerDaily({
                 onClick={handleApplyConfig}
                 className="mt-4 w-full rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800"
               >
-                Preview stretch changes
+                预览加练变更
               </button>
             )}
           </section>
@@ -894,7 +894,7 @@ function TrackerDaily({
           className="text-xs text-rose-300 hover:text-rose-500 flex items-center gap-1 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          Delete Today Record
+          删除今日记录
         </button>
       </div>
 
@@ -904,19 +904,19 @@ function TrackerDaily({
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
               <Trash2 className="w-5 h-5 text-rose-500" />
-              Delete Record?
+              确认删除记录？
             </h3>
             <div className="text-sm text-slate-500 mb-6 space-y-2">
-              <p>This will delete your local record for today.</p>
-              <p>If you use cloud sync, the deletion will be synced to the cloud on your next 'Sync now'.</p>
-              <p>Consider exporting a JSON backup in Settings first.</p>
+              <p>这会删除今天的本地记录。</p>
+              <p>若使用云同步，下次点击“立即同步”时，删除操作也会同步到云端。</p>
+              <p>建议先在设置中导出 JSON 备份。</p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200"
               >
-                Cancel
+                取消
               </button>
               <button
                 onClick={() => {
@@ -925,7 +925,7 @@ function TrackerDaily({
                 }}
                 className="flex-1 py-3 bg-rose-600 text-white font-bold rounded-xl shadow-lg shadow-rose-200 hover:bg-rose-700"
               >
-                Delete
+                删除
               </button>
             </div>
           </div>

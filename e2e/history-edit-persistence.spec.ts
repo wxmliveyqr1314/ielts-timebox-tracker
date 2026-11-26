@@ -8,15 +8,15 @@ test("History details receive fresh timestamps and survive reload and navigation
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: APP_STATE_KEY, state: TEST_APP_STATE });
   await page.reload();
-  await page.getByRole("button", { name: "History", exact: true }).click();
-  await page.getByRole("button", { name: /expand jun 27, 2026/i }).click();
+  await page.getByRole("button", { name: "历史", exact: true }).click();
+  await page.getByRole("button", { name: /展开2026年6月27日/i }).click();
 
   const date = "2026-06-27";
   const original = TEST_APP_STATE.records[date];
   let previousTimestamp = original.updatedAt;
   const edits = [
-    { selector: page.getByPlaceholder("Any reflections?"), field: "notes", value: "Reviewed listening errors" },
-    { selector: page.getByPlaceholder("What's the very first action tomorrow?"), field: "tomorrowFirstStep", value: "Review three difficult sentences" },
+    { selector: page.getByPlaceholder("记录今天的体会或需要调整的地方"), field: "notes", value: "Reviewed listening errors" },
+    { selector: page.getByPlaceholder("明天准备先做哪一件具体的事？"), field: "tomorrowFirstStep", value: "Review three difficult sentences" },
     { selector: page.locator('input[type="time"]'), field: "bedtime", value: "22:15" },
   ];
 
@@ -32,13 +32,13 @@ test("History details receive fresh timestamps and survive reload and navigation
   }
 
   await page.reload();
-  await page.getByRole("button", { name: "History", exact: true }).click();
-  await page.getByRole("button", { name: /expand jun 27, 2026/i }).click();
-  await expect(page.getByPlaceholder("Any reflections?")).toHaveValue(edits[0].value);
-  await expect(page.getByPlaceholder("What's the very first action tomorrow?")).toHaveValue(edits[1].value);
+  await page.getByRole("button", { name: "历史", exact: true }).click();
+  await page.getByRole("button", { name: /展开2026年6月27日/i }).click();
+  await expect(page.getByPlaceholder("记录今天的体会或需要调整的地方")).toHaveValue(edits[0].value);
+  await expect(page.getByPlaceholder("明天准备先做哪一件具体的事？")).toHaveValue(edits[1].value);
   await expect(page.locator('input[type="time"]')).toHaveValue("22:15");
-  await page.getByRole("button", { name: "Stats", exact: true }).click();
-  await expect(page.getByRole("group", { name: "Current streak" })).toContainText("0Days");
+  await page.getByRole("button", { name: "统计", exact: true }).click();
+  await expect(page.getByRole("group", { name: "当前连续学习" })).toContainText("0天");
   const finalState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), APP_STATE_KEY);
   expect(finalState.records[date].updatedAt).toBe(previousTimestamp);
   expect(finalState.records["2026-06-26"]).toEqual(TEST_APP_STATE.records["2026-06-26"]);
