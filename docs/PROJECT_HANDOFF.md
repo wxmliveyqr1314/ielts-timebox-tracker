@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.5.0
+- Version: v2.5.1
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -126,6 +126,15 @@ v2.5 adds a read-only Study tab that turns the task registry into an in-app guid
 - The implementation reads from `TASK_REGISTRY` through the task-library view model, so future registry metadata improvements automatically flow into Study Plan.
 
 Study Plan is not yet a long-term IELTS Roadmap. Future work can add IELTS exam-specific tasks, an Error Log, weekly cycles, and a goal-oriented roadmap after the v2.5 task guide proves useful in daily use.
+
+## v2.5.1 Maintenance (2026-11-26)
+
+- Speaking Bonus now contributes once to formal study, speaking minutes, and speaking activity days. History uses the same module totals, fixing repeated speaking counts and including all formal categories; the combined time is labeled Formal.
+- Recent History counts, Stats module/activity totals, and recent reward points use today plus the preceding six local calendar dates. Older history rows and lifetime reward/streak/stretch calculations remain available. Stretch is explicitly labeled All time.
+- Authentication failures now explain recovery options. Rejected session, email, verification, and sign-out requests release loading state so the user can retry. Initial session errors are visible even while signed out. A network failure suggests checking service availability without asserting that a project is paused.
+- Browser coverage includes all five navigation tabs, Study read-only persistence, 360/390/768/1280px wallpaper layouts, offline Study access, and returning after a long absence. Fixtures use fixed dates so results do not drift over time.
+- Study metadata badges use unique React keys even when both status and capacity display Control.
+- See `docs/V2_5_1_MAINTENANCE_PLAN.md` for scope and verification evidence.
 
 ## Quality Commands
 

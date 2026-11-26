@@ -10,6 +10,7 @@ import { getOrCreateDeviceId } from "../hooks/useAppData";
 import { analyzeAppDataHealth } from "../utils/dataHealth";
 import { WallpaperSettings } from "../components/settings/WallpaperSettings";
 import { UseWallpaperResult } from "../hooks/useWallpaper";
+import { getAuthErrorMessage } from "../utils/authErrors";
 
 function formatDeviceId(id: string | null) {
   if (!id) return "Not prepared yet";
@@ -65,14 +66,6 @@ export function SettingsPage({
 
   const healthReport = useMemo(() => analyzeAppDataHealth(appData.data), [appData.data]);
 
-  const formatAuthError = (err: any) => {
-    const msg = err?.message || "";
-    if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('too many requests')) {
-      return 'Too many login emails sent. Please wait a few minutes, then try again.';
-    }
-    return `Login failed. Please try again. (${msg})`;
-  };
-
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setInterval(() => {
@@ -89,7 +82,7 @@ export function SettingsPage({
     if (!authEmail) return;
     const { error } = await sendMagicLink(authEmail);
     if (error) {
-      setAuthNotice({ type: "error", message: formatAuthError(error) });
+      setAuthNotice({ type: "error", message: getAuthErrorMessage(error) });
     } else {
       setAuthNotice({ type: "success", message: "Magic link sent! Check your email." });
       setCooldown(60);
@@ -108,7 +101,7 @@ export function SettingsPage({
     }
     const { error } = await verifyEmailOtp(authEmail, authOtp);
     if (error) {
-      setAuthNotice({ type: "error", message: formatAuthError(error) });
+      setAuthNotice({ type: "error", message: getAuthErrorMessage(error) });
     } else {
       setAuthNotice(null);
       setAuthOtp("");
@@ -348,9 +341,9 @@ export function SettingsPage({
         </h2>
 
         <div className="space-y-4 mb-8">
-          {session && error && (
+          {error && !authNotice && (
             <div className="p-3 bg-rose-500/10 text-rose-500 text-xs rounded-xl border border-rose-500/20">
-              {error}
+              {getAuthErrorMessage(error)}
             </div>
           )}
           {authNotice && (

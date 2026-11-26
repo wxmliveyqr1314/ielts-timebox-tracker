@@ -18,7 +18,7 @@ import { calculateRewardSummary, formatPoints } from "../rewards/rewardPoints";
 
 function MetricCard({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
   return (
-    <div className="wallpaper-surface rounded-lg p-4 shadow-sm border border-slate-200 flex flex-col justify-between h-full">
+    <div role="group" aria-label={title} className="wallpaper-surface rounded-lg p-4 shadow-sm border border-slate-200 flex flex-col justify-between h-full">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold uppercase text-slate-600 tracking-wider">{title}</span>
         {icon}
@@ -199,7 +199,7 @@ export function StatsPage({ appData }: { appData: any }) {
             Optional Stretch
           </h2>
           <span className="shrink-0 text-[10px] font-semibold text-slate-400">
-            No penalty
+            All time · No penalty
           </span>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">

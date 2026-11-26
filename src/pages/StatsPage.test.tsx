@@ -1,10 +1,18 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StatsPage } from "./StatsPage";
 import { DailyRecord } from "../types";
 
-afterEach(cleanup);
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 5, 27, 12));
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function makeStatsRecord(
   date: string,
@@ -67,6 +75,24 @@ function makeStatsRecords(): Record<string, DailyRecord> {
 }
 
 describe("StatsPage", () => {
+  it("shows no recent study after a long absence but retains lifetime reward points", () => {
+    vi.setSystemTime(new Date(2026, 10, 26, 12));
+    render(<StatsPage appData={{ data: { records: makeStatsRecords() } }} />);
+    expect(within(screen.getByRole("group", { name: "Study time" })).getByText("0m")).toBeTruthy();
+    expect(screen.queryByText("5h 20m")).toBeNull();
+    expect(screen.getByRole("region", { name: /reward points/i }).textContent).toContain("1.5");
+    expect(screen.queryByText("No stats yet")).toBeNull();
+  });
+
+  it("includes completed-earlier speaking in the time and speaking activity cards", () => {
+    const record = makeStatsRecord("2026-06-27", "green");
+    record.tasks = [];
+    record.workdayBonus.speakingMinutes = 25;
+    render(<StatsPage appData={{ data: { records: { [record.date]: record } } }} />);
+    expect(within(screen.getByRole("group", { name: "Study time" })).getByText("25m")).toBeTruthy();
+    expect(screen.getByText("Avg 25m / day")).toBeTruthy();
+  });
+
   it("renders the approved heading and core sections", () => {
     const records: Record<string, DailyRecord> = makeStatsRecords();
     render(<StatsPage appData={{ data: { records } }} />);

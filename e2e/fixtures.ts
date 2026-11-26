@@ -57,6 +57,7 @@ export const TEST_APP_STATE: AppState = {
 };
 
 export async function seedAppState(page: Page): Promise<void> {
+  await page.clock.setFixedTime(new Date(2026, 5, 27, 12));
   await page.addInitScript(
     ({ key, state }) => localStorage.setItem(key, JSON.stringify(state)),
     { key: APP_STATE_KEY, state: TEST_APP_STATE },

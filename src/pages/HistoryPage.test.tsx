@@ -1,11 +1,19 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HistoryPage } from "./HistoryPage";
 import { DailyRecord, DayStatus } from "../types";
 import { buildDailyPlan } from "../planning/planEngine";
 
-afterEach(cleanup);
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 5, 27, 12));
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function makeRecord(date: string, status: DayStatus): DailyRecord {
   return {
@@ -79,6 +87,27 @@ function makeDynamicRecord(date: string): DailyRecord {
 }
 
 describe("HistoryPage", () => {
+  it("keeps old history rows while excluding them from the seven-day summary", () => {
+    renderHistory({
+      recent: makeRecord("2026-06-27", "green"),
+      old: makeRecord("2026-06-01", "yellow"),
+      future: makeRecord("2026-06-28", "red"),
+    });
+    const summary = screen.getByRole("region", { name: "Recent history summary" });
+    expect(summary.textContent).toContain("1Days1Green0Yellow0Red0Pending");
+    expect(screen.getByRole("button", { name: /expand jun 1, 2026/i })).toBeTruthy();
+  });
+
+  it("reports speaking bonus and all formal task minutes once on speaking days", () => {
+    const record = makeRecord("2026-06-27", "green");
+    record.dayType = "speaking_focus";
+    record.workdayBonus.speakingMinutes = 15;
+    record.tasks[0].category = "speaking_shadowing";
+    renderHistory({ [record.date]: record });
+    expect(screen.getByText("Formal: 35m")).toBeTruthy();
+    expect(screen.getByText("Speak: 35m")).toBeTruthy();
+  });
+
   it("renders all status counts including pending", () => {
     renderHistory({
       a: makeRecord("2026-06-27", "green"),

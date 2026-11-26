@@ -1,5 +1,6 @@
 import type { DailyRecord, DayStatus } from "../types";
-import { sortRecordsByDateDesc } from "../utils/date";
+import { getTodayStr, sortRecordsByDateDesc } from "../utils/date";
+import { getRecentRecords } from "../utils/stats";
 
 export const REWARD_POINTS_VERSION = 1;
 
@@ -94,6 +95,7 @@ export function calculateRecordRewardPoints(record: DailyRecord): RecordRewardPo
 export function calculateRewardSummary(
   records: DailyRecord[],
   goal?: RewardGoalInput,
+  today = getTodayStr(),
 ): RewardSummary {
   const sortedRecords = sortRecordsByDateDesc(records);
   const allPoints = sortedRecords.map(calculateRecordRewardPoints);
@@ -101,7 +103,8 @@ export function calculateRewardSummary(
     allPoints.reduce((sum, item) => sum + item.totalPoints, 0),
   );
   const recent7Points = roundToOneDecimal(
-    allPoints.slice(0, 7).reduce((sum, item) => sum + item.totalPoints, 0),
+    getRecentRecords(sortedRecords, 7, today)
+      .reduce((sum, record) => sum + calculateRecordRewardPoints(record).totalPoints, 0),
   );
   const completedDays = sortedRecords.filter((record) => record.status !== "pending").length;
   const averagePointsPerCompletedDay = completedDays > 0

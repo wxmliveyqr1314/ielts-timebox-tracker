@@ -46,6 +46,10 @@ test("provides offline application shell and retains local data", async ({ page,
     await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
     await expect(page.locator('[data-wallpaper-active="true"]')).toBeVisible();
 
+    await page.getByRole("button", { name: "Study", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Study Plan" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Momo vocabulary" })).toBeVisible();
+
     await page.getByRole("button", { name: "History" }).click();
     await expect(page.getByRole("button", { name: /expand jun 27, 2026/i })).toBeVisible();
 

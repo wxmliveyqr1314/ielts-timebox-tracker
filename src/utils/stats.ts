@@ -1,9 +1,18 @@
 import { DailyRecord } from "../types";
-import { getTodayStr, getPreviousDateKey, getNextDateKey, normalizeDateString, parseRecordDate } from "./date";
-import { format, subDays, addDays } from "date-fns";
+import { getTodayStr, getPreviousDateKey, getNextDateKey, normalizeDateString, parseRecordDate, sortRecordsByDateDesc } from "./date";
 
-export function getRecentRecords(records: DailyRecord[], days: number): DailyRecord[] {
-  return records.slice(0, days);
+export function getRecentRecords(
+  records: DailyRecord[],
+  days: number,
+  today = getTodayStr(),
+): DailyRecord[] {
+  const end = parseRecordDate(today);
+  if (!Number.isFinite(end) || !Number.isInteger(days) || days <= 0) return [];
+  const start = end - (days - 1) * 86_400_000;
+  return sortRecordsByDateDesc(records.filter((record) => {
+    const date = parseRecordDate(record.date);
+    return date >= start && date <= end;
+  }));
 }
 
 export function getStatusCounts(records: DailyRecord[]) {
@@ -140,11 +149,13 @@ export function getModuleMinutes(records: DailyRecord[]) {
       totalMomo += r.workdayBonus.momoMinutes || 0;
       totalDictation += r.workdayBonus.dictationMinutes || 0;
       totalReading += r.workdayBonus.readingMinutes || 0;
+      totalSpeaking += r.workdayBonus.speakingMinutes || 0;
       totalPassive += r.workdayBonus.passiveListeningMinutes || 0;
       totalFormal +=
         (r.workdayBonus.momoMinutes || 0) +
         (r.workdayBonus.dictationMinutes || 0) +
-        (r.workdayBonus.readingMinutes || 0);
+        (r.workdayBonus.readingMinutes || 0) +
+        (r.workdayBonus.speakingMinutes || 0);
     }
 
     r.tasks.forEach(t => {
@@ -214,7 +225,7 @@ export function getSpeakingStats(records: DailyRecord[]) {
   let totalMinutes = 0;
 
   records.forEach(r => {
-    let daySpeakingMins = 0;
+    let daySpeakingMins = r.workdayBonus?.speakingMinutes || 0;
     r.tasks.forEach(t => {
       if (t.category.startsWith("speaking")) {
         daySpeakingMins += t.actualMinutes || 0;
