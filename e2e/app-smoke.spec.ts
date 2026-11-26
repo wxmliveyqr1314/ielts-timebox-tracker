@@ -67,6 +67,9 @@ test("old history remains visible without appearing in recent study totals", asy
   await expect(page.getByRole("button", { name: /expand jun 27, 2026/i })).toBeVisible();
   await page.getByRole("button", { name: "Stats", exact: true }).click();
   await expect(page.getByRole("group", { name: "Study time" })).toContainText("0m");
+  const streak = page.getByRole("group", { name: "Current streak" });
+  await expect(streak).toContainText("0Days");
+  await expect(streak).toContainText("Best: 2 Days");
   await expect(page.getByRole("region", { name: "Reward points" })).toContainText("1.5");
 });
 

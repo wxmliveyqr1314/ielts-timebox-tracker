@@ -2,7 +2,7 @@
 
 ## Current Release
 
-- Version: v2.5.1
+- Version: v2.5.2
 - Frontend: React 19, Vite 6, TypeScript 5.8, Tailwind CSS 4, vite-plugin-pwa (PWA Shell)
 - Storage: LocalStorage primary, IndexedDB wallpaper cache, manual Supabase synchronization
 - Hosting: Vercel
@@ -135,6 +135,13 @@ Study Plan is not yet a long-term IELTS Roadmap. Future work can add IELTS exam-
 - Browser coverage includes all five navigation tabs, Study read-only persistence, 360/390/768/1280px wallpaper layouts, offline Study access, and returning after a long absence. Fixtures use fixed dates so results do not drift over time.
 - Study metadata badges use unique React keys even when both status and capacity display Control.
 - See `docs/V2_5_1_MAINTENANCE_PLAN.md` for scope and verification evidence.
+
+## v2.5.2 History Sync and Current Streak (2026-11-26)
+
+- `useAppData.updateRecord` assigns a strictly newer `updatedAt` for local edits, including History notes, tomorrow's first step, and bedtime. Repeated edits within one millisecond or after a device clock rollback remain eligible for manual synchronization. Import and cloud replacement preserve source timestamps.
+- Current streak starts from the user's local today, falling back to yesterday only when today has no record. Missing dates and Red stop the streak; Pending remains transparent. Future records are ignored, and lifetime best streak remains available after an absence.
+- Tests exercise affected edits through local persistence, cloud upload/merge, and a second-device download, plus browser reload/navigation. See `docs/V2_5_2_MAINTENANCE_PLAN.md`.
+- Existing edits skipped before this patch cannot be identified reliably. Re-edit an affected field after upgrading, then use Sync now to synchronize it.
 
 ## Quality Commands
 

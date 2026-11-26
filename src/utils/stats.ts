@@ -69,19 +69,18 @@ function buildRecordByDateMap(records: DailyRecord[]): Map<string, NormalizedRec
   return map;
 }
 
-export function getCurrentStreak(records: DailyRecord[]) {
+export function getCurrentStreak(records: DailyRecord[], today = getTodayStr()) {
+  const normalizedToday = normalizeDateString(today);
+  if (!normalizedToday) return { streak: 0, lastRedDate: null };
   const recordMap = buildRecordByDateMap(records);
-  const sorted = Array.from(recordMap.values()).sort(
-    (a, b) => b.timestamp - a.timestamp
-  );
-
-  if (sorted.length === 0) return { streak: 0, lastRedDate: null };
-
-  let expectedDate = sorted[0].normalizedDate;
+  // Today is still in progress when it has no record; yesterday can keep the streak alive.
+  let expectedDate = recordMap.has(normalizedToday)
+    ? normalizedToday
+    : getPreviousDateKey(normalizedToday);
   let streak = 0;
   let lastRedDate: string | null = null;
 
-  while (true) {
+  while (expectedDate) {
     const record = recordMap.get(expectedDate);
 
     if (!record) {

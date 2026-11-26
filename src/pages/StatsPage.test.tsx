@@ -82,6 +82,9 @@ describe("StatsPage", () => {
     expect(screen.queryByText("5h 20m")).toBeNull();
     expect(screen.getByRole("region", { name: /reward points/i }).textContent).toContain("1.5");
     expect(screen.queryByText("No stats yet")).toBeNull();
+    const streak = screen.getByRole("group", { name: "Current streak" });
+    expect(within(streak).getByText("0")).toBeTruthy();
+    expect(streak.textContent).toContain("Best: 2 Days");
   });
 
   it("includes completed-earlier speaking in the time and speaking activity cards", () => {

@@ -21,6 +21,7 @@ vi.mock('react', () => {
 
 import { useAppData } from './useAppData';
 import { DailyRecord } from '../types';
+import { mergeLocalAndCloudRecords } from '../utils/cloudSync';
 
 describe('useAppData', () => {
   beforeEach(() => {
@@ -54,6 +55,69 @@ describe('useAppData', () => {
     status: 'pending',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  });
+
+  it.each([
+    ['notes', 'Reviewed listening mistakes'],
+    ['tomorrowFirstStep', 'Review three difficult sentences'],
+    ['bedtime', '22:15'],
+  ] as const)('makes a History %s edit uploadable and readable on another device', (field, value) => {
+    vi.useFakeTimers();
+    const now = '2026-11-26T04:00:00.000Z';
+    vi.setSystemTime(new Date(now));
+    const original = {
+      ...createDummyRecord('2026-11-25'),
+      createdAt: '2026-11-25T10:00:00.000Z',
+      updatedAt: '2026-11-25T12:00:00.000Z',
+    };
+    const untouched = createDummyRecord('2026-11-24');
+    localStorage.getItem = vi.fn(() => JSON.stringify({ records: {
+      [original.date]: original,
+      [untouched.date]: untouched,
+    } }));
+    const { updateRecord } = useAppData();
+    updateRecord(original.date, (prev) => ({ ...prev!, [field]: value }));
+    const state = mockStates[0].data;
+    const edited = state.records[original.date];
+    expect(edited.updatedAt).toBe(now);
+    expect(edited.createdAt).toBe(original.createdAt);
+    expect(edited[field]).toBe(value);
+    expect(state.records[untouched.date]).toEqual(untouched);
+
+    const cloud = [{ date_key: original.date, updated_at: original.updatedAt, record_json: original }];
+    const result = mergeLocalAndCloudRecords(state, cloud, 'editing-device');
+    const upload = result.recordsToUpload.find((item) => item.date_key === original.date);
+    expect(upload?.record_json[field]).toBe(value);
+    expect(upload?.updated_at).toBe(now);
+    const otherDevice = mergeLocalAndCloudRecords({ records: {} }, [upload], 'other-device');
+    expect(otherDevice.mergedState.records[original.date][field]).toBe(value);
+  });
+
+  it('keeps edit timestamps increasing within a millisecond and after clock rollback', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-26T04:00:00.000Z'));
+    const { updateRecord } = useAppData();
+    const date = '2026-11-25';
+    updateRecord(date, () => createDummyRecord(date));
+    const createdAt = mockStates[0].data.records[date].createdAt;
+    const firstTimestamp = mockStates[0].data.records[date].updatedAt;
+    updateRecord(date, (prev) => ({ ...prev!, notes: 'First edit' }));
+    const nextTimestamp = mockStates[0].data.records[date].updatedAt;
+    expect(Date.parse(nextTimestamp)).toBe(Date.parse(firstTimestamp) + 1);
+    vi.setSystemTime(new Date('2026-11-25T04:00:00.000Z'));
+    updateRecord(date, (prev) => ({ ...prev!, notes: 'Second edit' }));
+    expect(Date.parse(mockStates[0].data.records[date].updatedAt)).toBe(Date.parse(nextTimestamp) + 1);
+    expect(mockStates[0].data.records[date].createdAt).toBe(createdAt);
+  });
+
+  it('preserves source timestamps when importing or replacing synchronized records', () => {
+    const { importData, replaceData } = useAppData();
+    const original = { ...createDummyRecord('2026-07-05'), updatedAt: '2026-07-05T12:00:00.000Z' };
+    const state = { records: { [original.date]: original } };
+    importData(state);
+    expect(mockStates[0].data.records[original.date].updatedAt).toBe(original.updatedAt);
+    replaceData(state);
+    expect(mockStates[0].data.records[original.date].updatedAt).toBe(original.updatedAt);
   });
 
   it('deleteRecord writes sync.deletedRecords for valid dates', () => {

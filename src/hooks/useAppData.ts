@@ -65,7 +65,16 @@ export function useAppData() {
   ) => {
     setHasMutated(true);
     setAppState((prev) => {
-      const newRecord = recordUpdater(prev.data.records[date]);
+      const previousRecord = prev.data.records[date];
+      const previousTime = Date.parse(previousRecord?.updatedAt ?? "");
+      // Local edits must beat the last synced timestamp, even within one millisecond.
+      const timestamp = Number.isFinite(previousTime)
+        ? Math.max(Date.now(), previousTime + 1)
+        : Date.now();
+      const newRecord = {
+        ...recordUpdater(previousRecord),
+        updatedAt: new Date(timestamp).toISOString(),
+      };
       return {
         ...prev,
         data: {

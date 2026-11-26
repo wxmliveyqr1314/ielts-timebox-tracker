@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DailyRecord } from "../types";
-import { getModuleMinutes, getRecentRecords, getSpeakingStats, getStretchStats } from "./stats";
+import { getCurrentStreak, getLongestStreak, getModuleMinutes, getRecentRecords, getSpeakingStats, getStretchStats } from "./stats";
 import { buildDailyPlan } from "../planning/planEngine";
 
 function record(overrides: Partial<DailyRecord> = {}): DailyRecord {
@@ -22,6 +22,56 @@ function record(overrides: Partial<DailyRecord> = {}): DailyRecord {
     ...overrides,
   };
 }
+
+describe("current streak", () => {
+  const today = "2026-11-26";
+  const day = (date: string, status: DailyRecord["status"] = "green") => record({ date, status });
+
+  it("resets an old current streak while retaining the lifetime best", () => {
+    const records = [day("2026-07-04"), day("2026-07-05")];
+    expect(getCurrentStreak(records, today)).toEqual({ streak: 0, lastRedDate: null });
+    expect(getLongestStreak(records)).toBe(2);
+  });
+
+  it("keeps yesterday's streak available until today has a result", () => {
+    const records = [day("2026-11-24"), day("2026-11-25", "yellow")];
+    expect(getCurrentStreak(records, today).streak).toBe(2);
+    expect(getCurrentStreak([...records, day(today)], today).streak).toBe(3);
+  });
+
+  it("ignores future records and stops at a missing calendar date", () => {
+    const records = [day("2026-11-27"), day(today), day("2026-11-24")];
+    expect(getCurrentStreak(records, today).streak).toBe(1);
+    expect(getCurrentStreak([day("2026-11-27")], today).streak).toBe(0);
+  });
+
+  it("keeps Pending transparent and stops on Red", () => {
+    const records = [
+      day(today, "pending"),
+      day("2026-11-25", "yellow"),
+      day("2026-11-24", "pending"),
+      day("2026-11-23"),
+      day("2026-11-22", "red"),
+      day("2026-11-21"),
+    ];
+    expect(getCurrentStreak(records, today)).toEqual({ streak: 2, lastRedDate: "2026-11-22" });
+    expect(getCurrentStreak([day(today, "red"), day("2026-11-25")], today))
+      .toEqual({ streak: 0, lastRedDate: today });
+  });
+
+  it("does not bridge an absent yesterday through a Pending today", () => {
+    expect(getCurrentStreak([day(today, "pending"), day("2026-11-24")], today).streak).toBe(0);
+  });
+
+  it("normalizes legacy dates, resolves duplicates, and crosses year boundaries", () => {
+    const records = [
+      record({ date: "2026-1-1", status: "red", updatedAt: "2026-01-01T01:00:00Z" }),
+      record({ date: "2026-01-01", status: "yellow", updatedAt: "2026-01-01T02:00:00Z" }),
+      day("2025-12-31"),
+    ];
+    expect(getCurrentStreak(records, "2026-01-02").streak).toBe(2);
+  });
+});
 
 describe("module minute statistics", () => {
   it("counts speaking bonus, excess credit, and task actuals exactly once", () => {
