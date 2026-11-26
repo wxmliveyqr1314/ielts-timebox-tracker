@@ -164,10 +164,23 @@ describe("calculateRewardSummary", () => {
       record("2026-07-08", "yellow"),
     ];
 
-    const summary = calculateRewardSummary(records);
+    const summary = calculateRewardSummary(records, undefined, "2026-07-08");
 
     expect(summary.totalPoints).toBe(7.5);
     expect(summary.recent7Points).toBe(6.5);
+  });
+
+  it("excludes older and future dates from recent points while preserving lifetime totals", () => {
+    const records = [
+      record("2026-11-19", "green"),
+      record("2026-11-20", "yellow"),
+      record("2026-11-26", "green"),
+      record("2026-11-27", "green"),
+    ];
+    const summary = calculateRewardSummary(records, undefined, "2026-11-26");
+    expect(summary.totalPoints).toBe(3.5);
+    expect(summary.recent7Points).toBe(1.5);
+    expect(calculateRewardSummary(records, undefined, "2027-01-01").recent7Points).toBe(0);
   });
 
   it("calculates goal progress and remaining points", () => {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { SettingsPage } from "./SettingsPage";
 import { UseWallpaperResult } from "../hooks/useWallpaper";
@@ -29,6 +29,42 @@ const mockWallpaper = {
 } as unknown as UseWallpaperResult;
 
 describe("SettingsPage offline guards", () => {
+  it("shows recovery guidance for session errors while signed out", () => {
+    render(
+      <SettingsPage
+        appData={mockAppData}
+        auth={{ session: null, configured: true, loading: false, error: "Failed to fetch" } as any}
+        wallpaper={mockWallpaper}
+        online={true}
+      />,
+    );
+    expect(screen.getByText(/check whether its Supabase project is paused/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Send Magic Link" })).toBeTruthy();
+  });
+
+  it("explains rejected email delivery and lets the user try again", async () => {
+    render(
+      <SettingsPage
+        appData={mockAppData}
+        auth={{
+          session: null,
+          configured: true,
+          loading: false,
+          error: null,
+          sendMagicLink: async () => ({ error: new TypeError("Failed to fetch") }),
+        } as any}
+        wallpaper={mockWallpaper}
+        online={true}
+      />,
+    );
+    fireEvent.change(screen.getByPlaceholderText("Enter your email"), {
+      target: { value: "learner@example.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send Magic Link" }));
+    expect(await screen.findByText(/check whether its Supabase project is paused/i)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Send Magic Link" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it("disables auth and sync actions when offline", () => {
     // Unauthenticated state
     const authLoggedOut = {

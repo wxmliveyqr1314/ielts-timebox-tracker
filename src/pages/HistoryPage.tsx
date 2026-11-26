@@ -5,35 +5,20 @@ import { cn } from "../lib/utils";
 import { 
   CheckCircle2, ChevronDown, ChevronUp, Calendar, Trash2, X, Clock3
 } from "lucide-react";
-import { 
-  calculateColorStatus, isMomoTask, isMainTaskForDay, isSpeakingTask 
-} from "../utils/status";
+import { calculateColorStatus } from "../utils/status";
+import { getModuleMinutes, getRecentRecords } from "../utils/stats";
 import { syncSleepControlTasks, syncRecordFieldsFromSleepControlTasks } from "../utils/sleepControl";
 import { formatFocusMode } from "../utils/display";
 import { PlanSummary } from "../components/daily/PlanSummary";
 
 // Helper to extract minutes
 function getRecordMetrics(record: DailyRecord) {
-  const tasks = record.tasks || [];
-  const momoTasks = tasks.filter(isMomoTask);
-  const mainTasks = tasks.filter(t => isMainTaskForDay(t, record.dayType));
-  const speakingTasks = tasks.filter(isSpeakingTask);
-  const passiveTasks = tasks.filter(t => t.category === "passive_listening");
-
-  const momoMinutes = momoTasks.reduce((acc, t) => acc + t.actualMinutes, 0) + (record.workdayBonus?.momoMinutes || 0);
-  const mainMinutes = mainTasks.reduce((acc, t) => acc + t.actualMinutes, 0);
-  const speakingMinutes = speakingTasks.reduce((acc, t) => acc + t.actualMinutes, 0);
-  const eveningFormalMinutes = momoMinutes + mainMinutes + speakingMinutes;
-  
-  const passiveMinutes = passiveTasks.reduce((acc, t) => acc + t.actualMinutes, 0) + (record.workdayBonus?.passiveListeningMinutes || 0);
-
-  const stoppedAfter2230Task = tasks.find(t => t.title.includes("22:30"));
-  const stoppedAfter2230 = stoppedAfter2230Task ? stoppedAfter2230Task.completed : record.stoppedAfter2230;
-
-  const noCompensatoryTask = tasks.find(t => t.title.includes("没有补偿性熬夜"));
-  const noCompensatoryStayingUp = noCompensatoryTask ? noCompensatoryTask.completed : record.noCompensatoryStayingUp;
-
-  return { eveningFormalMinutes, passiveMinutes, speakingMinutes, stoppedAfter2230, noCompensatoryStayingUp };
+  const totals = getModuleMinutes([record]);
+  return {
+    formalMinutes: totals.totalFormal,
+    passiveMinutes: totals.totalPassive,
+    speakingMinutes: totals.totalSpeaking,
+  };
 }
 
 export function HistoryPage({ appData }: { appData: any }) {
@@ -75,7 +60,7 @@ export function HistoryPage({ appData }: { appData: any }) {
     setDeleteMessage("Record deleted locally. Tap Sync now in Settings to update cloud backup.");
   };
 
-  const last7Days = records.slice(0, 7);
+  const last7Days = getRecentRecords(records, 7);
   const greenDays = last7Days.filter(r => r.status === "green").length;
   const yellowDays = last7Days.filter(r => r.status === "yellow").length;
   const redDays = last7Days.filter(r => r.status === "red").length;
@@ -101,7 +86,7 @@ export function HistoryPage({ appData }: { appData: any }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="wallpaper-surface rounded-lg border border-slate-200 p-4 shadow-sm">
+      <div role="region" aria-label="Recent history summary" className="wallpaper-surface rounded-lg border border-slate-200 p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-bold text-slate-800">History</h2>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Last 7 days</span>
@@ -152,7 +137,7 @@ export function HistoryPage({ appData }: { appData: any }) {
                   <div className="text-[10px] font-bold tracking-wider text-slate-400 uppercase flex flex-wrap gap-x-3 gap-y-1">
                     <span>{formatFocusMode(record.dayType)}</span>
                     <span>{record.energyLevel} Energy</span>
-                    <span className="text-indigo-500">Evening: {metrics.eveningFormalMinutes}m</span>
+                    <span className="text-indigo-500">Formal: {metrics.formalMinutes}m</span>
                     <span>Passive: {metrics.passiveMinutes}m</span>
                     <span>Speak: {metrics.speakingMinutes}m</span>
                   </div>

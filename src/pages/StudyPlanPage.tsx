@@ -110,9 +110,9 @@ function renderTaskGuideCard(task: Readonly<TaskDefinition>) {
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 sm:justify-end">
-          {getTaskBadges(task).map((badge) => (
+          {getTaskBadges(task).map((badge, index) => (
             <span
-              key={badge}
+              key={`${task.id}-${index}`}
               className="rounded-full bg-slate-100/70 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600"
             >
               {badge}

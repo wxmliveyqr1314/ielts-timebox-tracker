@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DailyRecord } from "../types";
-import { getModuleMinutes, getStretchStats } from "./stats";
+import { getModuleMinutes, getRecentRecords, getSpeakingStats, getStretchStats } from "./stats";
+import { buildDailyPlan } from "../planning/planEngine";
 
 function record(overrides: Partial<DailyRecord> = {}): DailyRecord {
   return {
@@ -23,6 +24,45 @@ function record(overrides: Partial<DailyRecord> = {}): DailyRecord {
 }
 
 describe("module minute statistics", () => {
+  it("counts speaking bonus, excess credit, and task actuals exactly once", () => {
+    const plan = buildDailyPlan({
+      dayContext: "workday",
+      exercised: false,
+      energyLevel: "normal",
+      dayType: "speaking_focus",
+      workdayBonus: { passiveListeningMinutes: 0, speakingMinutes: 75 },
+    });
+    const speaking = record({
+      workdayBonus: plan.snapshot.input.workdayBonus,
+      tasks: plan.tasks.map((task) => ({
+        ...task,
+        actualMinutes: task.definitionId === "speaking-conversation" ? 20 : 0,
+      })),
+      planSnapshot: { ...plan.snapshot, generatedAt: "2026-07-05T12:00:00Z" },
+    });
+
+    expect(getModuleMinutes([speaking]).totalSpeaking).toBe(95);
+    expect(getModuleMinutes([speaking]).totalFormal).toBe(95);
+    expect(getSpeakingStats([speaking])).toEqual({
+      daysCompleted: 1,
+      totalMinutes: 95,
+      avgMinutes: 95,
+    });
+  });
+
+  it("counts a speaking-bonus-only day and tolerates missing legacy bonus", () => {
+    const records = [
+      record({ workdayBonus: { passiveListeningMinutes: 0, speakingMinutes: 15 } }),
+      record(),
+    ];
+    expect(getSpeakingStats(records)).toEqual({
+      daysCompleted: 1,
+      totalMinutes: 15,
+      avgMinutes: 15,
+    });
+    expect(getModuleMinutes(records).totalFormal).toBe(15);
+  });
+
   it("counts every completed-earlier category exactly once", () => {
     const result = getModuleMinutes([
       record({
@@ -148,6 +188,36 @@ describe("module minute statistics", () => {
     const result = getModuleMinutes([stretchRecord]);
     expect(result.totalFormal).toBe(50);
     expect(result.totalMomo).toBe(50);
+  });
+});
+
+describe("recent calendar records", () => {
+  it("uses today and six preceding dates even when records are sparse or unordered", () => {
+    const records = [
+      record({ date: "2026-11-19" }),
+      record({ date: "2026-11-22" }),
+      record({ date: "2026-11-27" }),
+      record({ date: "2026-11-26" }),
+      record({ date: "invalid" }),
+      record({ date: "2026-11-20" }),
+    ];
+    const original = [...records];
+    expect(getRecentRecords(records, 7, "2026-11-26").map((item) => item.date))
+      .toEqual(["2026-11-26", "2026-11-22", "2026-11-20"]);
+    expect(records).toEqual(original);
+  });
+
+  it("handles year boundaries and legacy unpadded dates", () => {
+    expect(getRecentRecords([
+      record({ date: "2025-12-26" }),
+      record({ date: "2025-12-27" }),
+      record({ date: "2026-1-2" }),
+    ], 7, "2026-01-02").map((item) => item.date))
+      .toEqual(["2026-1-2", "2025-12-27"]);
+  });
+
+  it("returns no recent activity after a long absence", () => {
+    expect(getRecentRecords([record()], 7, "2026-11-26")).toEqual([]);
   });
 });
 
