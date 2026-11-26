@@ -10,7 +10,8 @@
 
 ## 验收清单
 
-- [ ] 生产 Supabase SQL 执行成功（当前尚未确认；浏览器连接受工具故障阻断，未取得数据库管理连接）。
+- [x] 2026-11-26 用户在生产 Supabase SQL Editor 执行迁移，返回 `Success. No rows returned`。
+- [x] 使用线上应用公开配置进行无用户身份的只读 RPC 探测，返回 HTTP 401 / `42501 permission denied for function sync_reward_settings`：函数已存在，匿名调用被拒绝；未读写账户数据。
 - [ ] 真实双设备、同一邮箱账户上传/下载/清除验证。
 - [ ] 真实登录邮件、学习记录和壁纸回归。
 
