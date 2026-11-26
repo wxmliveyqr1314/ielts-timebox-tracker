@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { AppState, DailyRecord, RewardGoalDraft } from "../types";
 import { normalizeDateString } from "../utils/date";
+import { nextRewardTimestamp } from "../utils/rewardSync";
+import { reconcileSyncResult } from "../utils/syncReconciliation";
 
 const STORAGE_KEY = "ielts_timebox_state_v2";
 
@@ -44,7 +46,7 @@ const loadState = () => {
 };
 
 export function useAppData() {
-  const [appState, setAppState] = useState(() => loadState());
+  const [appState, setAppState] = useState(() => ({ ...loadState(), generation: 0 }));
   const [hasMutated, setHasMutated] = useState(false);
   const data = appState.data;
 
@@ -120,17 +122,22 @@ export function useAppData() {
 
   const importData = (importedState: AppState) => {
     setHasMutated(true);
-    setAppState(prev => ({ ...prev, data: importedState }));
+    setAppState(prev => ({ ...prev, data: importedState, generation: prev.generation + 1 }));
   };
 
   const clearData = () => {
     setHasMutated(true);
-    setAppState(prev => ({ ...prev, data: defaultState }));
+    setAppState(prev => ({ ...prev, data: defaultState, generation: prev.generation + 1 }));
   };
 
-  const replaceData = (nextState: AppState) => {
+  const replaceData = (nextState: AppState, syncedFrom?: AppState) => {
     setHasMutated(true);
-    setAppState(prev => ({ ...prev, data: nextState }));
+    setAppState(prev => {
+      // Import/clear replaces the whole local dataset; an earlier request must not undo it.
+      if (syncedFrom && prev.generation !== appState.generation) return prev;
+      return { ...prev, data: syncedFrom
+        ? reconcileSyncResult(prev.data, syncedFrom, nextState) : nextState };
+    });
   };
 
   const saveRewardGoal = (draft: RewardGoalDraft) => {
@@ -145,6 +152,7 @@ export function useAppData() {
           ...prev.data,
           rewards: {
             schemaVersion: 1,
+            updatedAt: nextRewardTimestamp(prev.data.rewards),
             activeGoal: {
               id: existingGoal?.id ?? createId(),
               title: draft.title.trim(),
@@ -164,7 +172,7 @@ export function useAppData() {
       ...prev,
       data: {
         ...prev.data,
-        rewards: { schemaVersion: 1 },
+        rewards: { schemaVersion: 1, updatedAt: nextRewardTimestamp(prev.data.rewards) },
       },
     }));
   };

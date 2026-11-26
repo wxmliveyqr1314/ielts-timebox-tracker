@@ -348,6 +348,16 @@ describe("analyzeAppDataHealth", () => {
     expect(report.ok).toBe(true);
   });
 
+  it('accepts clear markers and detects invalid optional sync metadata', () => {
+    expect(analyzeAppDataHealth({ records: {}, rewards: {
+      schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', updatedBy: 'a',
+    } }).ok).toBe(true);
+    const invalid = analyzeAppDataHealth({ records: {}, rewards: {
+      schemaVersion: 1, updatedAt: 'bad', updatedBy: '',
+    } });
+    expect(invalid.issues.map(issue => issue.code)).toContain('REWARDS_INVALID_SYNC_METADATA');
+  });
+
   it("identifies malformed reward settings", () => {
     const report = analyzeAppDataHealth({
       records: {},

@@ -30,6 +30,7 @@ const DATA_HEALTH_COPY: Record<string, string> = {
   INVALID_DELETED_RECORD_KEY: "删除记录中的日期格式不正确。",
   REWARDS_NOT_OBJECT: "奖励设置格式不正确。",
   REWARDS_INVALID_SCHEMA_VERSION: "奖励设置版本无效。",
+  REWARDS_INVALID_SYNC_METADATA: "奖励目标的同步时间或设备标识无效。",
   REWARD_GOAL_NOT_OBJECT: "当前奖励目标格式不正确。",
   REWARD_GOAL_INVALID_ID: "奖励目标的标识缺失或无效。",
   REWARD_GOAL_INVALID_TITLE: "奖励名称缺失或无效。",

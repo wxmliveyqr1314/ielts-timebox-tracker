@@ -151,6 +151,15 @@ describe('useAppData', () => {
     expect(mockStates[0].data.sync).toBeUndefined();
   });
 
+  it.each(['import', 'clear'])('ignores an earlier sync response after %s replaces local data', (action) => {
+    const hook = useAppData();
+    const source = { records: {} };
+    if (action === 'import') hook.importData(source);
+    else hook.clearData();
+    hook.replaceData({ records: { stale: createDummyRecord('2026-05-19') } }, source);
+    expect(mockStates[0].data.records).toEqual({});
+  });
+
   it('saveRewardGoal creates reward settings with generated metadata', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-10T08:00:00.000Z'));
@@ -166,6 +175,7 @@ describe('useAppData', () => {
 
     expect(mockStates[0].data.rewards).toEqual({
       schemaVersion: 1,
+      updatedAt: '2026-07-10T08:00:00.000Z',
       activeGoal: {
         id: 'reward-goal-1',
         title: 'Hotpot dinner',
@@ -205,6 +215,9 @@ describe('useAppData', () => {
     saveRewardGoal({ title: 'Hotpot dinner', targetPoints: 20 });
     clearRewardGoal();
 
-    expect(mockStates[0].data.rewards).toEqual({ schemaVersion: 1 });
+    expect(mockStates[0].data.rewards).toEqual({ schemaVersion: 1, updatedAt: '2026-07-10T08:00:00.001Z' });
+    vi.setSystemTime(new Date('2026-07-09T08:00:00.000Z'));
+    saveRewardGoal({ title: 'Next goal', targetPoints: 10 });
+    expect(mockStates[0].data.rewards.updatedAt).toBe('2026-07-10T08:00:00.002Z');
   });
 });

@@ -285,6 +285,11 @@ export function analyzeAppDataHealth(appData: AppState): DataHealthReport {
         addIssue("error", "REWARDS_INVALID_SCHEMA_VERSION", "Reward settings schema version is invalid");
       }
 
+      if ((rewards.updatedAt !== undefined && !isValidDateString(rewards.updatedAt)) ||
+          (rewards.updatedBy !== undefined && (typeof rewards.updatedBy !== "string" || !rewards.updatedBy.trim()))) {
+        addIssue("error", "REWARDS_INVALID_SYNC_METADATA", "Reward sync metadata is invalid");
+      }
+
       if (rewards.activeGoal !== undefined) {
         const goal = rewards.activeGoal;
         if (!isObject(goal)) {

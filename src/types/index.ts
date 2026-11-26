@@ -220,6 +220,9 @@ export interface RewardGoalDraft {
 export interface RewardSettings {
   schemaVersion: 1;
   activeGoal?: RewardGoal;
+  // A timestamp with no activeGoal is a synchronized clear marker.
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface AppState {
@@ -236,6 +239,7 @@ export interface AppState {
       downloaded: number;
       skipped: number;
       completedAt: string;
+      rewardStatus?: "uploaded" | "downloaded" | "unchanged";
     };
   };
 }

@@ -34,7 +34,8 @@ test("provides offline application shell and retains local data", async ({ page,
   await seedWallpaper(page);
   await page.reload();
 
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker?.ready));
+  // `ready` is always a Promise; await activation before reloading the page.
+  await page.evaluate(async () => { await navigator.serviceWorker.ready; });
 
   // Reload once online so navigator.serviceWorker.controller is truthy
   await page.reload();
